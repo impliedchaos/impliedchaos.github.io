@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html>
+  <!-- Multi-track audio thanks to Thomas Sturm http://www.storiesinflight.com/html5/audio.html -->
+
+  <head>
+    <title>lame</title>
+    <style>
+      input.pat { border:0; padding:0px; }
+    </style>
+    <script>
+      function GET() {
+        var vars = {};
+        var parts = window.location.href.replace(/[?&]+([^=&]+)=([^&]*)/gi, function(m,key,value) {
+           vars[key] = value;
+        });
+        return vars;
+      }
+      
+      var timer;
+      var GOL=0;
+      var step=0;
+      var oldstep=-1;
+      var bpm=400;
+      var len=60000/bpm;
+      var chans=64;
+      var ac = new Array();
+      for (var i=0; i<chans; i++) {
+        ac[i] = new Array();
+        ac[i]['chan']=new Audio();
+        ac[i]['fin']=01;
+      }
+      var notes=new Array();
+      for (var i=0; i<16*16; i++) {
+        notes[i] = 0;
+      }
+      var tracks=new Array("tr01","tr02","tr03","tr04","tr05","tr06","tr07","tr08","tr09","tr10","tr11","tr12","tr13","tr14","tr15","tr16");
+      var samples = new Array(
+      'c-2','c#2','d-2','d#2','e-2','f-2','f#2','g-2','g#2','a-2','a#2','b-2',
+      'c-3','c#3','d-3','d#3','e-3','f-3','f#3','g-3','g#3','a-3','a#3','b-3',
+      'c-4','c#4','d-4','d#4','e-4','f-4','f#4','g-4','g#4','a-4','a#4','b-4',
+      'c-5','c#5','d-5','d#5','e-5','f-5','f#5','g-5','g#5','a-5','a#5','b-5',
+      'c-6','c#6','d-6','d#6','e-6','f-6','f#6','g-6','g#6','a-6','a#6','b-6',
+      'c-7','c#7','d-7','d#7','e-7','f-7','f#7','g-7','g#7','a-7','a#7','b-7',
+      'c-8');
+
+      function save() {
+        var p = '';
+        for (var i=0;i<32;i++) {
+          var k = 0;
+          if (notes[i*8]) { k += 128;}
+          if (notes[i*8+1]) { k += 64;}
+          if (notes[i*8+2]) { k += 32;}
+          if (notes[i*8+3]) { k += 16;}
+          if (notes[i*8+4]) { k += 8;}
+          if (notes[i*8+5]) { k += 4;}
+          if (notes[i*8+6]) { k += 2;}
+          if (notes[i*8+7]) { k += 1;}
+          var j = '00' + k.toString(16);
+
+          p = p + j.substr(j.length-2,2);
+        }
+        var s = '';
+        for (var i=0;i<16;i++) {
+          var k = '00' + document.getElementById('sel'+i).selectedIndex.toString(16);
+          s = s + k.substr(k.length-2,2);
+        }
+        var url=window.location.href.replace(/\?.*$/,'');
+        document.getElementById('surl').value=url+'?b='+bpm+'&s='+s+'&p='+p;
+      }
+
+
+
+      function loader() {
+        var b = GET()['b'];
+        var s = GET()['s'];
+        var p = GET()['p'];
+        if (b) {
+          setBPM(b);
+          document.getElementById('ebpm').value=b;
+        }
+        if (s) {
+          for (var i=0;i<16;i++) {
+            var x=s.substring(i*2,i*2+2);
+            scale['Custom'][i]=parseInt(x,16);
+          }
+          document.getElementById('scaler').selectedIndex=0;
+          //document.getElementById('scaler').value='Custom';
+          cscale(document.getElementById('scaler'));
+        }
+        if (p) {
+          for (var i=0;i<32;i++) {
+            var x=p.substring(i*2,i*2+2);
+            var t=parseInt(x,16);
+            if (t & 128) {
+              notes[i*8]=1;
+              document.getElementById('chk'+i*8).src='on-off.png';
+            }
+            if (t & 64) {
+              notes[i*8+1]=1;
+              document.getElementById('chk'+(i*8+1)).src='on-off.png';
+            }
+            if (t & 32) {
+              notes[i*8+2]=1;
+              document.getElementById('chk'+(i*8+2)).src='on-off.png';
+            }
+            if (t & 16) {
+              notes[i*8+3]=1;
+              document.getElementById('chk'+(i*8+3)).src='on-off.png';
+            }
+            if (t & 8) {
+              notes[i*8+4]=1;
+              document.getElementById('chk'+(i*8+4)).src='on-off.png';
+            }
+            if (t & 4) {
+              notes[i*8+5]=1;
+              document.getElementById('chk'+(i*8+5)).src='on-off.png';
+            }
+            if (t & 2) {
+              notes[i*8+6]=1;
+              document.getElementById('chk'+(i*8+6)).src='on-off.png';
+            }
+            if (t & 1) {
+              notes[i*8+7]=1;
+              document.getElementById('chk'+(i*8+7)).src='on-off.png';
+            }
+         }
+      }
+    }
+
+      // Load a sample from one of the tracks and play it.
+      function play(track) {
+        var t = document.getElementById(track);
+        for (var i=0; i<chans; i++) {
+          tt = new Date();
+          if (ac[i]['fin'] < tt.getTime()) {
+            ac[i]['fin'] = tt.getTime() + t.duration*1000;
+            ac[i]['chan'].src = t.src;
+            ac[i]['chan'].load();
+            ac[i]['chan'].play();
+            break;
+          }
+        }
+      }
+      
+      // A note on the pattern editor has been clicked, handle it:
+      function note(num) {
+        var b = document.getElementById('chk'+num);
+        if (notes[num]) {
+          notes[num] = 0;
+          b.src = "off-off.png"
+        } else {
+          notes[num] = 1;
+          b.src = "on-off.png"
+          play(tracks[Math.floor(num/16)]);
+        }
+      }
+
+      // Main loop.
+      function tick() {
+        document.getElementById('st').innerHTML="Step: " + (step+1);
+        for (var i=0; i<16; i++) {
+          var b = document.getElementById('chk'+(i*16+step));
+          var a = document.getElementById('chk'+(i*16+oldstep));
+          if (notes[i*16+step] == 1) {
+            play(tracks[i]);
+            b.src="on-on.png";
+          } else {
+            b.src="off-on.png";
+          }
+          if (oldstep >= 0) {
+            if ((notes[i*16+oldstep]) == 1) {
+              a.src="on-off.png";
+            } else {
+              a.src="off-off.png";
+            }
+          }
+        }
+        oldstep=step;
+        step++; step %= 16;
+        if (step == 0 && GOL) { doGOL(); }
+        timer=setTimeout("tick()",len);
+      }
+
+      // Stop playing.
+      function stop() {
+        clearTimeout(timer);
+        for (var i=0; i<16; i++) {
+          var b = document.getElementById('chk'+(i*16+oldstep));
+          if (oldstep >= 0) {
+            if ((notes[i*16+oldstep]) == 1) {
+              b.src="on-off.png";
+            } else {
+              b.src="off-off.png";
+            }
+          }
+        }
+        step=0;
+        oldstep=-1;
+        document.getElementById('st').innerHTML="Step: " + (step+1);
+      }
+
+      function resetti () {
+        for (var i=0;i<256;i++) {
+          notes[i]=0;
+          document.getElementById('chk'+i).src="off-off.png";
+        }
+      }
+
+      function setBPM (bpm) {
+        len = 60000/bpm;
+      }
+
+      // Load a sample into one of the tracks.
+      function sload (t,s) {
+        var z = s.value.replace(/#/,'%23');
+        t.src="organ/"+z+".ogg";
+      }
+
+      function doGOL() {
+        var nn = new Array(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0);
+        var t = 0;
+        for (var i=0; i<16; i++) {
+          for (var j=0; j<16; j++) {
+            if (i==0) {
+              if (j==0) {
+                t = (notes[(i+1)*16+(j)] + notes[(i+1)*16+(j+1)] + notes[(i)*16+(j+1)]);
+              } else if (j==15) {
+                t = (notes[(i+1)*16+(j-1)] + notes[(i+1)*16+(j)] + notes[(i)*16+(j-1)]);
+              } else {
+                t = (notes[(i+1)*16+(j-1)] + notes[(i+1)*16+(j)] + notes[(i+1)*16+(j+1)] + notes[(i)*16+(j-1)] + notes[(i)*16+(j+1)]);
+              }
+            } else if (i==15) {
+              if (j==0) {
+                t = (notes[(i-1)*16+(j)] + notes[(i-1)*16+(j+1)] + notes[(i)*16+(j+1)]);
+              } else if (j==15) {
+                t = (notes[(i-1)*16+(j-1)] + notes[(i-1)*16+(j)] + notes[(i)*16+(j-1)]);
+              } else {
+                t = (notes[(i-1)*16+(j-1)] + notes[(i-1)*16+(j)] + notes[(i-1)*16+(j+1)] + notes[(i)*16+(j-1)] + notes[(i)*16+(j+1)]);
+              }
+            } else {
+              t = (notes[(i-1)*16+(j-1)] + notes[(i-1)*16+(j)] + notes[(i-1)*16+(j+1)] + notes[(i+1)*16+(j-1)] + notes[(i+1)*16+(j)] + notes[(i+1)*16+(j+1)] + notes[(i)*16+(j-1)] + notes[(i)*16+(j+1)]);
+            }
+            var m = notes[i*16+j];
+            if (t < 2 && m) {
+              nn[i*16+j] = 0;
+              document.getElementById('chk'+(i*16+j)).src="off-off.png";
+            }
+            if (t > 1 && t < 4 && m) {
+              nn[i*16+j] = 1;
+              document.getElementById('chk'+(i*16+j)).src="on-off.png";
+            }
+            if (t > 3 && m) {
+              nn[i*16+j] = 0;
+              document.getElementById('chk'+(i*16+j)).src="off-off.png";
+            }
+            if (t == 3 && m == 0) {
+              nn[i*16+j] = 1;
+              document.getElementById('chk'+(i*16+j)).src="on-off.png";
+            }
+          }
+        }
+        //for (var i=0;i<256;i++) { notes[i]=nn[i]; }
+        notes=nn;
+      }
+
+      function cscale(sel) {
+        for (var i=0; i<16; i++) {
+          document.getElementById('sel'+i).selectedIndex=scale[sel.value][i];
+          sload(document.getElementById(tracks[i]),document.getElementById('sel'+i));
+        }
+      }
+
+
+      var scale=new Array();
+      scale['Custom'] = new Array(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
+      scale['Key of Gmaj'] = new Array(45,43,42,40,38,36,35,33,31,30,28,26,24,23,21,19);
+      scale['Key of Gmin'] = new Array(45,43,41,39,38,36,34,33,31,29,27,26,24,22,21,19);
+      scale['Chord Amaj'] = new Array(69,64,61,57,52,49,45,40,37,33,28,25,21,16,13,9);
+      scale['Chord Amin'] = new Array(69,64,60,57,52,48,45,40,36,33,28,24,21,16,12,9);
+    </script>
+  </head>
+  <body onLoad="loader()">
+    <!-- Load up 16 notes in the Key of Gmaj -->
+    <audio id="tr01" src="organ/a-5.ogg" preload="auto"></audio>
+    <audio id="tr02" src="organ/g-5.ogg" preload="auto"></audio>
+    <audio id="tr03" src="organ/f%235.ogg" preload="auto"></audio>
+    <audio id="tr04" src="organ/e-5.ogg" preload="auto"></audio>
+    <audio id="tr05" src="organ/d-5.ogg" preload="auto"></audio>
+    <audio id="tr06" src="organ/c-5.ogg" preload="auto"></audio>
+    <audio id="tr07" src="organ/b-4.ogg" preload="auto"></audio>
+    <audio id="tr08" src="organ/a-4.ogg" preload="auto"></audio>
+    <audio id="tr09" src="organ/g-4.ogg" preload="auto"></audio>
+    <audio id="tr10" src="organ/f%234.ogg" preload="auto"></audio>
+    <audio id="tr11" src="organ/e-4.ogg" preload="auto"></audio>
+    <audio id="tr12" src="organ/d-4.ogg" preload="auto"></audio>
+    <audio id="tr13" src="organ/c-4.ogg" preload="auto"></audio>
+    <audio id="tr14" src="organ/b-3.ogg" preload="auto"></audio>
+    <audio id="tr15" src="organ/a-3.ogg" preload="auto"></audio>
+    <audio id="tr16" src="organ/g-3.ogg" preload="auto"></audio>
+    <button onClick="GOL=0;tick();">start static pattern</button>
+    <button onClick="GOL=1;tick();">start Game of Life</button>
+    <button onClick="stop();">stop</button>
+    <button onClick="resetti();">reset</button>
+    <div>URL: <input type="text" id="surl" size="20">
+    <button onClick="save();">save state to URL</button></div>
+    <div>BPM: <input type="text" id="ebpm" value="400" size="3" onChange="setBPM(this.value)"></div>
+    <div>Scale: <select id="scaler" onChange="cscale(this);">
+    <script>
+      for (var i in scale) {
+        if (i == 'Key of Gmaj') {
+          document.write('<option selected>'+i+'</option>');
+        } else {
+          document.write('<option>'+i+'</option>');
+        }
+      }
+    </script>
+    </select></div>
+    <div id="st">Step: 1</div><br/>
+    <div id="pattern">
+    <!-- Create the pattern selector -->
+    <script>
+      for (var i=0; i<16*16; i++) {
+        if ((i % 16)==0) {
+          var k = Math.floor(i/16);
+          if (i) { document.writeln('<br/>'); }
+          document.writeln('<select id="sel'+k+'" onChange="sload('+tracks[k]+',sel'+k+')">');
+          for (var x in samples) {
+            if (x == scale['Key of Gmaj'][k]) {
+              document.writeln('<option selected>'+samples[x]+'</option>');
+            } else {
+              document.writeln('<option>'+samples[x]+'</option>');
+            }
+          }
+          document.writeln('</select>');
+        }
+
+        document.writeln('<input class="pat" type="image" src="off-off.png" id="chk'+i+'" onClick="note('+i+')" value="1">');
+      }
+    </script>
+    </div>
+  </body>
+</html>
