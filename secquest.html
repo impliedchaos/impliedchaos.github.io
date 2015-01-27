@@ -1,0 +1,198 @@
+<html>
+<head>
+<title>(in)Security Questions</title>
+</head>
+<style>
+td { border-bottom: 1px solid #bbb; }
+td.label { width: 170px; }
+td.w { color: #f66; width: 220px; }
+td.x { color: #66f; font-family: monospace; width:90px; text-align:right;}
+h2 { margin-bottom: 5px; font-size: 22px}
+h1 { margin-bottom: 5px; font-size: 28px}
+body { color: #000; background-color: #eee; font-family: sans-serif; font-size: 16px}
+</style>
+<script src="wordlist.js"></script>
+<script>
+/* Shitty ARC4 PRNG implementation.
+ * The genbyte method returns a single octect from the PRNG.
+ * The rand method generates 3 bytes of data to return at most a 24bit number. 
+ * The seed can be set at object instantiation or by calling the seed method.
+ */
+function Arc4_prng(key1,key2) {
+  this.i = 0;
+  this.j = 0;
+  this.S = new Array(256);
+
+  this.genbyte = function() {
+    var swap = 0;
+    this.i = (this.i + 1) % 256;
+    this.j = (this.j + this.S[this.i]) % 256;
+    swap = this.S[this.i];
+    this.S[this.i] = this.S[this.j];
+    this.S[this.j] = swap;
+    return(this.S[(this.S[this.i] + this.S[this.j]) % 256]);
+  }
+
+  this.rand = function(limit) {
+    var rv = 0;
+    for (var wordlen = 2; wordlen >= 0; wordlen--) {
+      rv += this.genbyte() << (wordlen * 8);
+    }
+    if (!limit) { return(rv); }
+    return(rv % limit);
+  }
+
+  this.seed = function(data,data2) {
+    var swap = 0;
+    for (this.i = 0; this.i < 256; this.i++) {
+      this.S[this.i] = this.i;
+    }
+    this.j = 0;
+    if (!data) { data = 'Use a fucking key, dammit.'; }
+    for (this.i = 0; this.i < 256; this.i++) {
+      this.j = (this.j + this.S[this.i] +  data.charCodeAt(this.i % data.length)) % 256;
+      swap = this.S[this.i];
+      this.S[this.i] = this.S[this.j];
+      this.S[this.j] = swap;
+    }
+    if (data2) {
+      this.j = 0;
+      for (this.i = 0; this.i < 256; this.i++) {
+        this.j = (this.j + this.S[this.i] +  data2.charCodeAt(this.i % data2.length)) % 256;
+        swap = this.S[this.i];
+        this.S[this.i] = this.S[this.j];
+        this.S[this.j] = swap;
+      }
+    }
+    this.i = 0;
+    this.j = 0;
+    for (swap = 0; swap < 20000; swap++) { this.genbyte(); }
+  }
+
+  this.seed(key1,key2);
+}
+
+var quest = [
+  ["Mother's Maiden Name",         'surname',      'nee'       ],
+  ["Book",                         'title',        'book'      ],
+  ["Author",                       'name',         'author'    ],
+  ["Movie",                        'title',        'movie'     ],
+  ["Director",                     'name',         'director'  ],
+  ["Telephone Number",             'phone',        'phone'     ],
+  ["First Crush/Kiss/Past Lover",  'name',         'kiss'      ],
+  ["Teacher",                      'name',         'teacher'   ],
+  ["Actor",                        'name',         'actor'     ],
+  ["Aunt/Uncle",                   '3name',        'uncle'     ],
+  ["Niece/Nephew",                 '3name',        'nephew'    ],
+  ["Band",                         'title',        'band'      ],
+  ["Singer",                       'name',         'singer'    ],
+  ["City",                         'place',        'city'      ],
+  ["Pet/Animal",                   'stupid',       'pet'       ],
+  ["Car",                          'car',          'car'       ],
+  ["Street Name",                  'street',       'street'    ],
+  ["Sibling",                      '3name',        'sibling'   ],
+  ["Company",                      'company',      'company'   ],
+];
+
+function genData() {
+  var rng = new Arc4_prng(document.getElementById('key1').value,document.getElementById('key2').value);
+  var words = new Wordlist;
+  function randpop(arr) {
+    return( arr.splice(rng.rand(arr.length),1).toString() );
+  }
+  function hxv(num) {
+    var t = '000000' + num.toString(16);
+    return(t.substr(t.length - 6, t.length));
+  }
+  function rstr() {
+    var a = rng.rand(); var b = rng.rand(); var c = rng.rand(); var d = rng.rand();
+    return(hxv(a ^ c) + hxv(b ^ d));
+  }
+  function phone() {
+    var a = rng.rand(); var b = rng.rand(); var c = rng.rand(); var d = rng.rand();
+    var num = d.toString() + b.toString() + a.toString() + c.toString() + '00000000';
+    a = rng.rand(8)+2;
+    b = rng.rand(8)+2;
+    return(a.toString() + num.substr(0,2) + '-' + b.toString() + num.substr(2,2) + '-' + num.substr(4,4));
+  }
+  for (var k=0; k < quest.length; k++) {
+    if (quest[k][1] == 'title') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.adj) + ' ' + randpop(words.nouns);
+    } else if (quest[k][1] == 'name') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.names) + ' ' + randpop(words.surnames);
+    } else if (quest[k][1] == '3name') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.names) + ' ' + randpop(words.names) + ' ' + randpop(words.surnames);
+    } else if (quest[k][1] == 'surname') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.surnames);
+    } else if (quest[k][1] == 'phone') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = phone();
+    } else if (quest[k][1] == 'place') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.place) + randpop(words.psuffix);
+    } else if (quest[k][1] == 'stupid') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.stupid) + '-' + randpop(words.stusuf);
+    } else if (quest[k][1] == 'car') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.cmake) + ' ' + randpop(words.cmodel) + ' ' + randpop(words.ctrim);
+    } else if (quest[k][1] == 'street') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.surnames) + ' ' + randpop(words.rsuffix);
+    } else if (quest[k][1] == 'company') {
+      document.getElementById(quest[k][2] + '_w').innerHTML = randpop(words.surnames) + ' ' + randpop(words.comsuffix) + ' ' + randpop(words.comtype);
+    }
+    document.getElementById(quest[k][2] + '_x').innerHTML = rstr();
+  }
+}
+
+function rr() {
+  document.getElementById('key1').value = Math.random().toString();
+  document.getElementById('key2').value = Math.random().toString();
+  genData();
+}
+
+function selectText(obj) {      // adapted from Denis Sadowski (via StackOverflow.com)
+  if (document.selection) {
+    var range = document.body.createTextRange();
+    range.moveToElementText(obj);
+    range.select();
+  }
+  else if (window.getSelection) {
+    var range = document.createRange();
+    range.selectNode(obj);
+    window.getSelection().addRange(range);
+  }
+}
+
+</script>
+<body>
+ <h1>Security Question Answer Generator</h1>
+ Key 1: <input id='key1' type=text /> (Master Password)<br/>
+ Key 2: <input id='key2' type=text /> (Website TLD)<br/><br/>
+ <button onClick="genData()">Generate</button> <button onClick="rr()">"Random"</button><br/><br/>
+ <h2>People</h2>
+ <table>
+   <tr><td class="label">Mother's Maiden Name:</td><td onClick="selectText(this);" class="w" id="nee_w"></td><td onClick="selectText(this);" class="x" id="nee_x"></td></tr>
+   <tr><td class="label">Former Lover:</td><td onClick="selectText(this);" class="w" id="kiss_w"></td><td onClick="selectText(this);" class="x" id="kiss_x"></td></tr>
+   <tr><td class="label">Teacher:</td><td onClick="selectText(this);" class="w" id="teacher_w"></td><td onClick="selectText(this);" class="x" id="teacher_x"></td></tr>
+   <tr><td class="label">Sibling:</td><td onClick="selectText(this);" class="w" id="sibling_w"></td><td onClick="selectText(this);" class="x" id="sibling_x"></td></tr>
+   <tr><td class="label">Aunt/Uncle:</td><td onClick="selectText(this);" class="w" id="uncle_w"></td><td onClick="selectText(this);" class="x" id="uncle_x"></td></tr>
+   <tr><td class="label">Niece/Nephew:</td><td onClick="selectText(this);" class="w" id="nephew_w"></td><td onClick="selectText(this);" class="x" id="nephew_x"></td></tr>
+ </table>
+ <h2>Pop culture</h2>
+ <table>
+   <tr><td class="label">Book:</td><td onClick="selectText(this);" class="w" id="book_w"></td><td onClick="selectText(this);" class="x" id="book_x"></td></tr>
+   <tr><td class="label">Author:</td><td onClick="selectText(this);" class="w" id="author_w"></td><td onClick="selectText(this);" class="x" id="author_x"></td></tr>
+   <tr><td class="label">Movie:</td><td onClick="selectText(this);" class="w" id="movie_w"></td><td onClick="selectText(this);" class="x" id="movie_x"></td></tr>
+   <tr><td class="label">Director:</td><td onClick="selectText(this);" class="w" id="director_w"></td><td onClick="selectText(this);" class="x" id="director_x"></td></tr>
+   <tr><td class="label">Actor:</td><td onClick="selectText(this);" class="w" id="actor_w"></td><td onClick="selectText(this);" class="x" id="actor_x"></td></tr>
+   <tr><td class="label">Band:</td><td onClick="selectText(this);" class="w" id="band_w"></td><td onClick="selectText(this);" class="x" id="band_x"></td></tr>
+   <tr><td class="label">Singer:</td><td onClick="selectText(this);" class="w" id="singer_w"></td><td onClick="selectText(this);" class="x" id="singer_x"></td></tr>
+ </table>
+ <h2>Other</h2>
+ <table>
+   <tr><td class="label">City/Town:</td><td onClick="selectText(this);" class="w" id="city_w"></td><td onClick="selectText(this);" class="x" id="city_x"></td></tr>
+   <tr><td class="label">Street Name:</td><td onClick="selectText(this);" class="w" id="street_w"></td><td onClick="selectText(this);" class="x" id="street_x"></td></tr>
+   <tr><td class="label">Telephone Number:</td><td onClick="selectText(this);" class="w" id="phone_w"></td><td onClick="selectText(this);" class="x" id="phone_x"></td></tr>
+   <tr><td class="label">Pet/Animal:</td><td onClick="selectText(this);" class="w" id="pet_w"></td><td onClick="selectText(this);" class="x" id="pet_x"></td></tr>
+   <tr><td class="label">Car:</td><td onClick="selectText(this);" class="w" id="car_w"></td><td onClick="selectText(this);" class="x" id="car_x"></td></tr>
+   <tr><td class="label">Company:</td><td onClick="selectText(this);" class="w" id="company_w"></td><td onClick="selectText(this);" class="x" id="company_x"></td></tr>
+ </table>
+</body>
+<html>

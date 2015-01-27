@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Battleship&reg; Probability Calculator</title>
+<link rel="image_src" href="http://dharmadevil.com/lame/bs.png" />
+<style>
+  table { cursor: crosshair; }
+  td { text-align: center; vertical-align:center; border: 1px solid black; height: 25px; width: 25px;}
+  td.l { border: 0px; font-weight: bold; }
+  div #formations { width: 500px; }
+</style>
+<script>
+
+/* Deluxe Battleship Movie Edition (Carrier, BS, Blue Destroyer, Red Destoyer, RHIB */
+var acol = {"A":0,"B":1,"C":2,"D":3,"E":4,"F":5,"G":6,"H":7,"I":8,"J":9};
+var DBMEmax = ["J",14];
+var DBMEpos = [ ["A1", ["G",07,"R"],["E",10,"R"],["B",04,"R"],["I",02,"R"],["G",14,"D"]],
+                ["A2", ["B",01,"D"],["B",05,"D"],["J",06,"R"],["F",14,"D"],["G",10,"R"]],
+                ["A3", ["C",09,"D"],["C",13,"D"],["A",05,"R"],["A",01,"D"],["E",01,"D"]],
+                ["A4", ["D",03,"R"],["F",04,"R"],["H",04,"D"],["G",09,"D"],["G",03,"D"]],
+                ["A5", ["B",07,"R"],["D",06,"R"],["D",11,"R"],["H",04,"D"],["I",09,"D"]],
+                ["A6", ["E",07,"R"],["E",13,"D"],["H",03,"R"],["A",08,"D"],["J",12,"R"]],
+                ["A7", ["J",05,"R"],["F",11,"D"],["B",08,"D"],["D",09,"R"],["G",14,"D"]],
+                ["A8", ["J",02,"R"],["C",11,"R"],["E",02,"R"],["H",06,"R"],["I",08,"R"]],
+                ["A9", ["A",03,"D"],["G",03,"R"],["B",12,"R"],["E",01,"D"],["F",08,"D"]],
+                ["A10",["G",04,"R"],["B",09,"D"],["C",01,"D"],["D",12,"R"],["I",11,"D"]],
+                ["B1", ["E",07,"R"],["J",04,"R"],["H",07,"R"],["G",10,"D"],["B",02,"D"]],
+                ["B2", ["D",05,"D"],["B",07,"D"],["F",01,"R"],["D",13,"D"],["H",13,"D"]],
+                ["B3", ["C",04,"R"],["F",10,"D"],["C",14,"D"],["J",12,"R"],["F",13,"D"]],
+                ["B4", ["I",09,"R"],["C",03,"R"],["B",13,"D"],["E",02,"R"],["F",09,"D"]],
+                ["B5", ["E",10,"D"],["F",13,"D"],["A",11,"D"],["G",06,"R"],["A",06,"R"]],
+                ["B6", ["A",02,"D"],["A",14,"D"],["G",12,"R"],["I",07,"R"],["B",07,"D"]],
+                ["B7", ["D",14,"D"],["A",05,"R"],["B",09,"D"],["H",05,"R"],["E",05,"D"]],
+                ["B8", ["B",14,"D"],["F",09,"R"],["I",08,"R"],["H",06,"R"],["H",01,"R"]],
+                ["B9", ["D",14,"D"],["A",08,"R"],["C",07,"D"],["H",05,"R"],["E",05,"D"]],
+                ["B10",["C",04,"D"],["I",05,"R"],["A",02,"R"],["E",01,"D"],["C",13,"R"]],
+                ["C1", ["H",05,"R"],["B",09,"D"],["B",11,"D"],["A",11,"R"],["D",07,"D"]],
+                ["C2", ["D",14,"D"],["G",02,"D"],["D",04,"D"],["H",08,"R"],["E",06,"R"]],
+                ["C3", ["C",14,"D"],["G",01,"D"],["G",04,"D"],["E",04,"R"],["D",12,"D"]],
+                ["C4", ["B",06,"R"],["F",04,"D"],["E",06,"R"],["H",07,"D"],["H",14,"D"]],
+                ["C5", ["A",03,"D"],["G",04,"R"],["J",11,"R"],["H",14,"D"],["E",14,"D"]],
+                ["C6", ["D",03,"D"],["F",13,"D"],["G",08,"D"],["B",05,"D"],["E",07,"R"]],
+                ["C7", ["G",03,"R"],["E",01,"R"],["E",07,"R"],["G",01,"D"],["D",09,"R"]],
+                ["C8", ["D",13,"D"],["D",04,"D"],["J",07,"R"],["B",08,"D"],["C",01,"D"]],
+                ["C9", ["E",06,"D"],["G",11,"D"],["A",06,"D"],["C",02,"R"],["F",13,"D"]],
+                ["C10",["B",03,"R"],["G",08,"R"],["A",02,"D"],["I",09,"R"],["D",03,"R"]],
+                ["D1", ["E",06,"R"],["C",03,"R"],["F",11,"R"],["A",12,"R"],["B",05,"D"]],
+                ["D2", ["A",05,"R"],["D",03,"D"],["D",11,"D"],["H",11,"D"],["H",05,"D"]],
+                ["D3", ["B",06,"R"],["A",01,"R"],["B",13,"D"],["E",04,"R"],["D",01,"D"]],
+                ["D4", ["C",06,"R"],["E",01,"R"],["F",06,"D"],["J",02,"R"],["E",08,"R"]],
+                ["D5", ["C",10,"R"],["F",06,"R"],["H",04,"D"],["E",10,"R"],["A",12,"R"]],
+                ["D6", ["A",08,"D"],["C",12,"D"],["A",01,"R"],["I",07,"R"],["E",05,"R"]],
+                ["D7", ["E",01,"D"],["C",14,"D"],["H",09,"D"],["A",04,"R"],["H",05,"D"]],
+                ["D8", ["H",04,"R"],["B",10,"D"],["A",14,"D"],["D",01,"D"],["I",13,"D"]],
+                ["D9", ["J",02,"R"],["C",07,"D"],["D",05,"D"],["G",08,"R"],["C",12,"R"]],
+                ["D10",["D",11,"D"],["H",01,"R"],["F",05,"R"],["G",07,"D"],["B",07,"R"]],
+                ["E1", ["B",03,"R"],["D",13,"D"],["H",07,"R"],["H",01,"R"],["E",04,"D"]],
+                ["E2", ["A",01,"R"],["F",07,"D"],["F",01,"R"],["I",03,"R"],["G",03,"R"]],
+                ["E3", ["F",02,"D"],["C",11,"R"],["B",02,"R"],["H",04,"D"],["D",01,"R"]],
+                ["E4", ["F",01,"D"],["E",05,"R"],["G",12,"R"],["J",04,"R"],["A",05,"D"]],
+                ["E5", ["F",04,"D"],["D",03,"R"],["C",06,"R"],["A",01,"D"],["I",06,"D"]],
+                ["E6", ["D",07,"R"],["H",04,"R"],["G",01,"R"],["I",01,"R"],["J",04,"R"]],
+                ["E7", ["I",05,"R"],["D",02,"R"],["G",05,"R"],["A",06,"D"],["G",02,"R"]],
+                ["E8", ["E",08,"R"],["J",05,"R"],["D",03,"D"],["D",05,"D"],["J",09,"R"]],
+                ["E9", ["F",07,"D"],["F",04,"D"],["B",04,"D"],["D",11,"R"],["C",01,"R"]],
+                ["E10",["E",04,"D"],["D",07,"D"],["F",10,"R"],["H",10,"R"],["E",02,"D"]],
+                ["F1", ["F",02,"D"],["B",02,"D"],["A",05,"D"],["I",05,"R"],["G",08,"R"]],
+                ["F2", ["B",14,"D"],["A",06,"D"],["G",04,"R"],["A",04,"D"],["D",09,"R"]],
+                ["F3", ["H",06,"R"],["F",03,"R"],["H",01,"D"],["D",09,"R"],["B",08,"D"]],
+                ["F4", ["A",01,"D"],["I",11,"R"],["A",08,"D"],["E",03,"R"],["G",05,"R"]],
+                ["F5", ["F",09,"R"],["H",01,"R"],["C",05,"D"],["B",03,"D"],["I",06,"D"]],
+                ["F6", ["B",06,"D"],["G",06,"D"],["E",03,"D"],["C",01,"D"],["D",11,"D"]],
+                ["F7", ["J",07,"R"],["I",03,"R"],["G",02,"R"],["C",09,"D"],["E",05,"D"]],
+                ["F8", ["B",09,"D"],["D",11,"D"],["A",07,"D"],["H",08,"D"],["D",03,"R"]],
+                ["F9", ["B",04,"R"],["F",01,"R"],["G",05,"R"],["F",13,"D"],["C",01,"R"]],
+                ["F10",["B",14,"D"],["G",04,"R"],["H",13,"D"],["D",03,"R"],["B",06,"R"]],
+                ["G1", ["J",01,"R"],["D",03,"D"],["H",05,"R"],["D",04,"R"],["H",14,"D"]],
+                ["G2", ["C",11,"D"],["J",07,"R"],["F",03,"D"],["C",04,"D"],["A",07,"R"]],
+                ["G3", ["I",09,"R"],["H",04,"R"],["E",12,"D"],["F",14,"D"],["B",11,"R"]],
+                ["G4", ["J",01,"R"],["D",06,"D"],["B",01,"D"],["H",04,"R"],["A",02,"R"]],
+                ["G5", ["D",04,"D"],["D",06,"R"],["B",08,"R"],["D",02,"D"],["I",03,"D"]],
+                ["G6", ["F",07,"D"],["C",04,"D"],["H",05,"D"],["B",07,"D"],["D",09,"R"]],
+                ["G7", ["F",05,"R"],["A",01,"D"],["E",11,"R"],["J",03,"R"],["H",01,"R"]],
+                ["G8", ["I",09,"R"],["G",03,"D"],["C",07,"R"],["E",12,"D"],["J",05,"R"]],
+                ["G9", ["E",03,"D"],["A",01,"R"],["C",02,"R"],["H",05,"R"],["I",07,"R"]],
+                ["G10",["I",10,"R"],["E",02,"R"],["G",03,"D"],["F",05,"R"],["C",03,"R"]],
+                ["H1", ["F",14,"D"],["D",09,"D"],["B",03,"D"],["F",05,"R"],["J",11,"R"]],
+                ["H2", ["D",07,"D"],["A",03,"R"],["F",01,"R"],["I",01,"R"],["E",13,"R"]],
+                ["H3", ["B",04,"D"],["C",09,"R"],["I",08,"R"],["F",06,"D"],["I",02,"R"]],
+                ["H4", ["F",06,"D"],["E",08,"R"],["I",08,"R"],["B",04,"R"],["D",04,"D"]],
+                ["H5", ["F",04,"D"],["D",05,"R"],["F",07,"D"],["C",04,"R"],["C",14,"D"]],
+                ["H6", ["J",08,"R"],["J",02,"R"],["G",08,"R"],["D",06,"R"],["F",06,"D"]],
+                ["H7", ["E",11,"D"],["G",09,'D'],["E",02,"R"],["A",07,"D"],["H",04,"D"]],
+                ["H8", ["A",09,"R"],["A",02,"D"],["F",08,"D"],["E",06,"R"],["G",10,"D"]],
+                ["H9", ["B",07,"D"],["A",09,"D"],["D",10,"D"],["I",02,"R"],["A",01,"R"]],
+                ["H10",["D",04,"D"],["G",06,"D"],["B",11,"D"],["D",13,"D"],["B",13,"R"]],
+                ["I1", ["H",05,"R"],["E",03,"D"],["E",12,"R"],["C",05,"D"],["J",04,"R"]],
+                ["I2", ["J",01,"R"],["H",05,"R"],["D",02,"D"],["G",14,"D"],["E",12,"R"]],
+                ["I3", ["I",08,"R"],["B",14,"D"],["E",06,"R"],["F",01,"R"],["H",14,"D"]],
+                ["I4", ["C",06,"R"],["F",09,"D"],["F",14,'D'],["I",06,"R"],["B",04,"D"]],
+                ["I5", ["E",07,"R"],["C",02,"R"],["I",05,"R"],["F",05,"D"],["G",07,"D"]],
+                ["I6", ["E",03,"D"],["F",08,"D"],["H",06,"D"],["G",14,"D"],["C",08,"D"]],
+                ["I7", ["H",08,'R'],["A",04,"R"],["J",06,"R"],["I",04,"R"],["F",14,"D"]],
+                ["I8", ["I",05,"R"],["F",10,"R"],["F",03,"D"],["B",06,"R"],["D",01,"R"]],
+                ["I9", ["I",05,"R"],["G",03,"D"],["E",05,"D"],["F",10,"D"],["A",04,"D"]],
+                ["I10",["A",06,"R"],["C",10,"R"],["F",12,"R"],["H",12,"R"],["E",08,"R"]],
+                ["J1", ["D",14,"D"],["G",12,"D"],["D",03,"R"],["G",04,"D"],["H",06,"R"]],
+                ["J2", ["C",05,"D"],["A",06,'R'],["H",05,"R"],["B",09,"D"],["J",11,"R"]],
+                ["J3", ["H",01,'R'],["C",07,"D"],["D",13,"D"],["A",14,"D"],["D",02,"D"]],
+                ["J4", ["B",01,"D"],["G",01,"D"],["E",06,"R"],["B",10,"R"],["A",04,"D"]],
+                ["J5", ["B",04,"D"],["B",09,"R"],["E",12,"R"],["J",07,"R"],["C",01,"D"]],
+                ["J6", ["I",08,"R"],["C",04,"R"],["A",14,"D"],["C",11,"D"],["J",03,"R"]],
+                ["J7", ["E",07,"R"],["H",04,"R"],["I",11,"R"],["A",08,"D"],["E",03,"D"]],
+                ["J8", ["D",02,"D"],["A",13,"D"],["H",08,"D"],["E",11,"D"],["A",05,"D"]],
+                ["J9", ["A",07,"R"],["E",13,"D"],["H",05,"D"],["D",03,"D"],["A",03,"D"]],
+                ["J10",["E",05,"R"],["B",09,"R"],["B",03,"D"],["D",01,"D"],["I",03,"D"]]];
+
+
+var BSA = new Array(DBMEmax[1] * (acol[DBMEmax[0]]+1));
+var ADD = new Array(DBMEmax[1] * (acol[DBMEmax[0]]+1));
+for (var iter = 0; iter < BSA.length; iter++) {
+  BSA[iter] = 0;
+  ADD[iter] = 0;
+}
+
+function additup() {
+    var X = DBMEmax[1];
+    var Y = acol[DBMEmax[0]]+1;
+    var g = new Array(X*Y);
+    for (var i = 0; i < X*Y; i++) { ADD[i] = 0; }
+    var list = new Array();
+    for (var i = 0; i < DBMEpos.length; i++) {
+      for (var j = 0; j < X*Y; j++) { g[j] = 0; }
+      var xx = DBMEpos[i][1][1] - 1;
+      var yy = acol[DBMEpos[i][1][0]];
+      if (DBMEpos[i][1][2] == "R") {
+        g[yy*X+xx]++;
+        g[yy*X+xx+1]++;
+        g[yy*X+xx+2]++;
+        g[yy*X+xx+3]++;
+        g[yy*X+xx+4]++;
+      } else {
+        g[yy*X+xx]++;
+        g[(yy+1)*X+xx]++;
+        g[(yy+2)*X+xx]++;
+        g[(yy+3)*X+xx]++;
+        g[(yy+4)*X+xx]++;
+      }
+      xx = DBMEpos[i][2][1] - 1;
+      yy = acol[DBMEpos[i][2][0]];
+      if (DBMEpos[i][2][2] == "R") {
+        g[yy*X+xx]++;
+        g[yy*X+xx+1]++;
+        g[yy*X+xx+2]++;
+        g[yy*X+xx+3]++;
+      } else {
+        g[yy*X+xx]++;
+        g[(yy+1)*X+xx]++;
+        g[(yy+2)*X+xx]++;
+        g[(yy+3)*X+xx]++;
+      }
+      xx = DBMEpos[i][3][1] - 1;
+      yy = acol[DBMEpos[i][3][0]];
+      if (DBMEpos[i][3][2] == "R") {
+        g[yy*X+xx]++;
+        g[yy*X+xx+1]++;
+        g[yy*X+xx+2]++;
+      } else {
+        g[yy*X+xx]++;
+        g[(yy+1)*X+xx]++;
+        g[(yy+2)*X+xx]++;
+      }
+      xx = DBMEpos[i][4][1] - 1;
+      yy = acol[DBMEpos[i][4][0]];
+      if (DBMEpos[i][4][2] == "R") {
+        g[yy*X+xx]++;
+        g[yy*X+xx+1]++;
+        g[yy*X+xx+2]++;
+      } else {
+        g[yy*X+xx]++;
+        g[(yy+1)*X+xx]++;
+        g[(yy+2)*X+xx]++;
+      }
+      xx = DBMEpos[i][5][1] - 1;
+      yy = acol[DBMEpos[i][5][0]];
+      if (DBMEpos[i][5][2] == "R") {
+        g[yy*X+xx]++;
+        g[yy*X+xx+1]++;
+      } else {
+        g[yy*X+xx]++;
+        g[(yy+1)*X+xx]++;
+      }
+      var ok = true;
+      for (var j = 0; j < X*Y; j++) {
+        if (g[j] == 1 && BSA[j] == -1) { ok = false; break; }
+        if (g[j] == 0 && BSA[j] == 1) { ok = false; break; }
+      }
+      if (! ok) { continue; }
+      list.push(DBMEpos[i][0]);
+      for (var j = 0; j < X*Y; j++) {
+        ADD[j] += g[j];
+      }
+   }
+   for (var i = 0; i < X*Y; i++) {
+     if (BSA[i] == 0) {
+       var cell = document.getElementById('ebsc' + i.toString());
+       if (ADD[i] == 0) {
+            cell.innerHTML = "&nbsp;"
+       } else {
+            cell.innerHTML = ADD[i];
+       }
+     }
+   }
+   document.getElementById('formations').innerHTML = "Possible Formations ("+list.length+"): " + list.join(', ');
+}
+
+function clicky(e,i) {
+   var cell = document.getElementById('ebsc' + i.toString());
+   if (e == 2) {
+      if (BSA[i] == -1) {
+          BSA[i] = 0;
+          if (ADD[i] == 0) {
+            cell.innerHTML = "&nbsp;"
+          } else {
+            cell.innerHTML = ADD[i];
+          }
+      } else {
+          BSA[i] = -1;
+          cell.innerHTML = 'X';
+      }
+   } else {
+      if (BSA[i] == -1) {
+         BSA[i] = 0;
+          if (ADD[i] == 0) {
+            cell.innerHTML = "&nbsp;"
+          } else {
+            cell.innerHTML = ADD[i];
+          }
+      } else if (BSA[i] == 1) {
+          BSA[i] = -1;
+          cell.innerHTML = 'X';
+      } else {
+         BSA[i] = 1;
+         cell.innerHTML = '\u2713';
+      }
+   }
+   additup();
+}
+
+function bsgrid() {
+   document.writeln('<table oncontextmenu="return false;">');
+   document.writeln('<tr>');
+   for (var y = 0; y <= DBMEmax[1]; y++) {
+      if (y > 0) { document.writeln('<td class="l">'+y+'</td>'); } else { document.writeln('<td class="l">&nbsp;</td>'); }
+   }
+   for (var j = 0; j <= acol[DBMEmax[0]]; j++) {
+      document.writeln('<tr>');
+      for (var i = 0; i < DBMEmax[1]; i++) { 
+         var z = DBMEmax[1] * j + i;
+         if (i == 0) { document.writeln('<td class="l">'+String.fromCharCode(j+65)+'</td>'); }
+         document.writeln('<td id="ebsc' + z + '" onmousedown="clicky(event.button,' + z + '); return false;"> 0 </td>');
+      }
+      document.writeln('</tr>');
+   }
+   document.writeln('</table>');
+   document.writeln('<br/><div id="formations"></div>');
+}
+
+</script>
+</head>
+<body>
+<h1>Battleship&reg; Probability Calculator</h1>
+<p>(Specifically Hasbro's "Deluxe Battleship&reg; The Movie" edition, as previous games used a 10x10 grid.)</p>
+<br/><p>To use: Left Click on a Square to indicate a hit, Right Click on a square to indicate a Miss.<br/>After clicking, some formations will be eliminated and the probabilities will be recalculated.</p>
+<div id="ebsgrid">
+<script>
+bsgrid();
+additup();
+</script>
+</div>
+</body>
+</html>

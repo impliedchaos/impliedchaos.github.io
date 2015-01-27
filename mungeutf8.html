@@ -1,0 +1,1418 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta charset="utf-8" />
+      <title>Text Munger</title>  
+      <meta name="description" content="Text Transformation and Encoding Functions" />
+      <meta name="author" content="Dave" />
+      <script>
+function utf8str(str) {
+  var text = str;
+  var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr < 128) {
+        out += String.fromCharCode(chr);
+      } else if (chr > 127 && chr < 2048) {
+        out += String.fromCharCode(192 + (chr >> 6)) + String.fromCharCode(128 + (chr & 63));
+      } else if (chr > 2047 && chr < 65536) {
+        out += String.fromCharCode(224 + (chr >> 12)) + String.fromCharCode(128 + ((chr >> 6) & 63)) + String.fromCharCode(128 + (chr & 63));
+      } else if (chr > 65535) {
+        out += String.fromCharCode(240 + (chr >> 18)) + String.fromCharCode(128 + ((chr >> 12) & 63)) + String.fromCharCode(128 + ((chr >> 6) & 63)) + String.fromCharCode(128 + (chr & 63));
+      }
+   }
+   return(out);
+}
+
+function deutf8str(str) {
+   var out = '';
+   var i = 0;
+   while (i < str.length) {
+      var x = str.charCodeAt(i);
+      if (x < 128) {
+         out += str.charAt(i);
+      } else {
+         if ((x & 224) == 192) {
+            var y = (x & 31) << 6;
+            var y1 = str.charCodeAt(i+1);
+            if ((y1 & 192) == 128) {
+               y += (y1 & 63);
+               out += String.fromCharCode(y);
+               i++;
+            } else {
+               out += str.charAt(i);
+            }
+         } else if ((x & 240) == 224) {
+            var y = (x & 15) << 12;
+            var y1 = str.charCodeAt(i+1);
+            var y2 = str.charCodeAt(i+2);
+            if ((y1 & 192) == 128 && (y2 & 192) == 128) {
+               y += (y1 & 63) << 6;
+               y += (y2 & 63);
+               out += String.fromCharCode(y);
+               i+=2;
+            } else {
+               out += str.charAt(i);
+            }
+         } else if ((x & 248) == 240) {
+            var y = (x & 7) << 18;
+            var y1 = str.charCodeAt(i+1);
+            var y2 = str.charCodeAt(i+2);
+            var y3 = str.charCodeAt(i+3);
+            if ((y1 & 192) == 128 && (y2 & 192) == 128 && (y3 & 192) == 128) {
+               y += (y1 & 63) << 12;
+               y += (y2 & 63) << 6;
+               y += (y3 & 63);
+               out += String.fromCharCode(y);
+               i+=3;
+            } else {
+               out += str.charAt(i);
+            }
+         } else {
+            out += str.charAt(i);
+         }
+      }
+      ++i;
+   }
+   return(out);
+}
+
+function ucs2be(str) {
+   var out = '';
+   for (var i=0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      out += String.fromCharCode(c >> 8);
+      out += String.fromCharCode(c & 255);
+   }
+   return(out);
+}
+
+function deucs2be(str) {
+   var out = '';
+   for (var i=0; i < str.length; i+=2) {
+      var c = (str.charCodeAt(i) << 8) + str.charCodeAt(i+1);
+      out += String.fromCharCode(c);
+   }
+   return(out);
+}
+
+function ucs2le(str) {
+   var out = '';
+   for (var i=0; i < str.length; i++) {
+      var c = str.charCodeAt(i);
+      out += String.fromCharCode(c & 255);
+      out += String.fromCharCode(c >> 8);
+   }
+   return(out);
+}
+
+function deucs2le(str) {
+   var out = '';
+   for (var i=0; i < str.length; i+=2) {
+      var c = str.charCodeAt(i) + (str.charCodeAt(i+1) << 8);
+      out += String.fromCharCode(c);
+   }
+   return(out);
+}
+
+function lowbytes(str) {
+   var out = '';
+   for (var i=0; i < str.length; i++)
+      out += String.fromCharCode(str.charCodeAt(i) & 255);
+   return(out);
+}
+
+function anagram(instr,max) {
+   function pInit(arr,num) {
+      for (var x = 0; x < num; x++) arr[x] = x;
+   }
+
+   function pIncr(arr,len) {
+      for (var x = arr.length - 1; x >= 0; x--) {
+         if ((++arr[x]) < len) {
+            for (var y = x + 1; y < arr.length; y++) {
+               arr[y] = arr[x] + (y - x);
+            }
+            break;
+         } else {
+            if (x == 0) return(0);
+            len--;
+         }
+      }
+      return(1);
+   }
+
+   var lcount = [];
+   var letters = '';
+   var positions = [];
+   for (var i = 0; i < instr.length; i++) {
+      var c = instr.charAt(i);
+      if (letters.indexOf(c) < 0) {
+         letters += c;
+         lcount[letters.indexOf(c)] = 0;
+      }
+      lcount[letters.indexOf(c)]++;
+   }
+   for (var i = 0; i < lcount.length; i++) {
+      positions[i] = [ 0 ];
+      pInit(positions[i],lcount[i]);
+   }
+ 
+   var done = false;
+   var cnt = 0;
+   var outstr = '';
+   while (! done) {
+      var size = instr.length;
+      var newstr = [];
+      var trans = [];
+      for (var i = 0; i < size; i++) trans[i] = i;
+      for (var i = 0; i < positions.length; i++) {
+         var index = 0;
+         var kill = [];
+         for (var j = 0; j < trans.length; j++) {
+            if ((index < lcount[i]) && (positions[i][index] == j)) {
+               newstr[trans[j]] = letters[i];
+               kill.push(j);
+               ++index;
+            }
+         }
+         for (var j = kill.length - 1; j >= 0; j--) trans.splice(kill[j],1);
+      }
+      outstr += cnt.toString() + ': ' + newstr.join('') + '\n';
+      cnt++;
+      if (max > 0 && cnt >= max) break;
+      for (var i = 0; i < positions.length; i++) {
+         if ( pIncr(positions[i],size) ) {
+            break;
+         } else {
+            if (i == (positions.length - 1)) {
+               done = true;
+               break;
+            }
+            pInit(positions[i],lcount[i]);
+            size -= lcount[i];
+         }
+      }
+   }
+   return(outstr);
+}
+
+function frittata(text) {
+   var out = text.toLowerCase();
+   out = out.replace(/(^|\W)your|you're|you\s+are/gi,'$1ur');  // ur
+   out = out.replace(/(^|\W)the(\W|$)/gi,'$1teh$2');  // teh
+   out = out.replace(/(^|\W)then(\W|$)/gi,'$1SWAPZ0RZ$2'); // swap 'then' and 'than'
+   out = out.replace(/(^|\W)than(\W|$)/gi,'$1then$2');
+   out = out.replace(/(^|\W)SWAPZ0RZ(\W|$)/gi,'$1than$2');
+   out = out.replace(/(^|\W)effect/gi,'$1SWAPZ0RZ');  // swap 'effect...' and 'affect...'
+   out = out.replace(/(^|\W)affect/gi,'$1effect');
+   out = out.replace(/(^|\W)SWAPZ0RZ/gi,'$1affect');
+   out = out.replace(/(^|\W)except/gi,'$1SWAPZ0RZ');  // swap 'except...' and 'accept...'
+   out = out.replace(/(^|\W)accept/gi,'$1except');
+   out = out.replace(/(^|\W)SWAPZ0RZ/gi,'$1accept');
+   out = out.replace(/(^|\W)(s?[cwh]ould(n't|\s+not)?\s+)have(\W|$)/gi,"$1$2of$4");  // should/could/would "of"
+   out = out.replace(/(^|\W)(young(er)?|littler?|small(er)?|underaged?)\s+girl(s?)(\W|$)/gi,"$1loli$5$6");
+   out = out.replace(/(^|\W)(young(er)?|littler?|small(er)?|underaged?)\s+(kid|boy|child(ren)?)(s?)(\W|$)/gi,"$1underage b8$7$8");
+   out = out.replace(/(^|\W)(brother|man|guy|boy|dude)(\W|$)/gi,'$1bro$3');  // bro
+   out = out.replace(/(^|\W)(brothers|men|boys|dudes)(\W|$)/gi,'$1bros$3');
+   out = out.replace(/(^|\W)(banned|band)(\W|$)/gi,"$1b&$3");
+   out = out.replace(/(^|\W)internets?(\W|$)/gi,"$1intertubez$2");
+   out = out.replace(/(^|\W)teen(-?age[dr]?)?(s?)(\W|$)/gi,"$1jailbait$3$4");
+   out = out.replace(/(^|\W)(woman|lady|girl)(\W|$)/gi,"$1bitch$3");  // bitz
+   out = out.replace(/(^|\W)(women|ladies|girls)(\W|$)/gi,"$1bitches$3");
+   out = out.replace(/(^|\W)(guys)(\W|$)/gi,'$1gaiz$3');
+   out = out.replace(/what/gi,'wat');
+   out = out.replace(/yeah/gi,'yea'); // FUCK YEA, Frittata.
+   out = out.replace(/(^|\W)(for|four)(\W|$)/gi,'$14$3');
+   out = out.replace(/(^|\W)before(\W|$)/gi,'$1b4$2');
+   out = out.replace(/(^|\W)get\s+(teh\s+(fuck|hell|heck)\s+)?out((ta|\s+of)\s+here)?(\W|$)/gi,'$1gtfo$6');
+   out = out.replace(/(^|\W)get\s+(teh\s+(fuck|hell|heck)\s+)?outta(\W|$)/gi,'$1gtfo of$4');
+   out = out.replace(/(^|\W)learn\s+(how\s+)?to\s+/gi,'$1l2'); // l2type, Frittata.
+   out = out.replace(/(^|\W)(to|too|two)(\W|$)/gi,'$12$3');
+   out = out.replace(/(^|\W)(ok|okay)(\W|$)/gi,'$1k$3');
+   out = out.replace(/(^|\W)(all\s+right|alright)(\W|$)/gi,'$1kk$3');
+   out = out.replace(/(^|\W)(you)(\W|$)/gi,'$1u$3');
+   out = out.replace(/(^|\W)(thanks|thank u)(\W|$)/gi,'$1thx$3');
+   out = out.replace(/some/gi,'sum');
+   out = out.replace(/(^|[^k])night/gi,'$1nite');
+   out = out.replace(/(^|\W)tonite(\W|$)/gi,'$12nite$2');
+   out = out.replace(/(^|\W)today(\W|$)/gi,'$12day$2');
+   out = out.replace(/(^|\W|sum|any|every)one(\W|$)/gi,'$11$2');
+   out = out.replace(/(^|\W)(more)(\W|$)/gi,'$1moar$3');
+   out = out.replace(/(^|\W)(source)(\W|$)/gi,'$1sauce$3');
+   out = out.replace(/(^|\W)love(s)?(\W|$)/gi,'$1luv$2$3');
+   out = out.replace(/(^|\W)(because|\Scause)(\W|$)/gi,'$1cuz$3');
+   out = out.replace(/(^|\W)(hello|hi|good\s+morning)(\W|$)/gi,'$1hai$3');
+   out = out.replace(/(^|\W)(have|has)(\W|$)/gi,'$1haz$3');
+   out = out.replace(/(^|\W)(are|our)(\W|$)/gi,'$1r$3');
+   out = out.replace(/(^|\W)(now)(\W|$)/gi,'$1nao$3');
+   out = out.replace(/(^|\W)(any\s*1)(\W|$)/gi,'$1ne1$3');
+   out = out.replace(/(^|\W)(laugh|chuckle|guffaw|giggle)(\W|$)/gi,'$1lol$3');
+   out = out.replace(/(^|\W)(laughed|chuckled|guffawed|giggled)(\W|$)/gi,"$1lol'd$3");
+   out = out.replace(/(^|\W)(laughs|chuckles|guffaws|giggles|laughter|jokes|comedy)(\W|$)/gi,'$1lulz$3');
+   out = out.replace(/(^|\W)(funny|hilarious|humorous)(\W|$)/gi,'$1lulzy$3');
+   out = out.replace(/(^|\W)(see)(\W|$)/gi,'$1c$3');
+   out = out.replace(/(^|\W)(a lot|lots)(\W|$)/gi,'$1alot$3');
+   out = out.replace(/(^|\W)(small|tiny|little)(\W|$)/gi,'$1lil$3');
+   out = out.replace(/(^|\W)(why)(\W|$)/gi,'$1y$3');
+   out = out.replace(/(^|\W)(an)(\W|$)/gi,'$1a$3');
+   out = out.replace(/(^|\W)(saturday)(\W|$)/gi,'$1caturday$3');
+   out = out.replace(/(^|\W)(sk|[sp]?l|h|m|d)ate(rs?|s)?(\W|$)/gi,'$1$28$3$4');
+   out = out.replace(/(^|\W)(wait)(\W|$)/gi,'$1w8$3');
+   out = out.replace(/(^|\W)(great)(\W|$)/gi,'$1gr8$3');
+   out = out.replace(/(^|\W)(doesn't|does\s+not|do\s+not)(\W|$)/gi,"$1don't$3");
+   out = out.replace(/(^|\W)(isn't|is\s+not|aren't|r\s+not|am\s+not)(\W|$)/gi,'$1aint$3');
+   out = out.replace(/(^|\W)(I'm\s+not)(\W|$)/gi,'$1i aint$3');
+   out = out.replace(/(^|\W)(it\s+is)(\W|$)/gi,"$1itz$3");
+   out = out.replace(/(^|\W)(is)(\W|$)/gi,"$1iz$3");
+   out = out.replace(/(^|\W)(don't\s+know)(\W|$)/gi,'$dunno$3');
+   out = out.replace(/(^|\W)damn(ed|able)?(\W|$)/gi,"$1dam$3");
+   out = out.replace(/(^|\W)(dumb)(\W|$)/gi,"$1dum$3");   
+   out = out.replace(/(^|\W)(them)(\W|$)/gi,'$1em$3');
+   out = out.replace(/(^|\W)(angry|irate|incensed|upset|unhappy|displeased|pissed\s+off|pissed|sullen|bitter|enraged|annoyed|furious|infuriated|outraged|resentful)(\W|$)/gi,"$1butthurt$3");
+   out = out.replace(/(^|\W)(cat|kitten|kitty|feline)(\W|$)/gi,'$1kitteh$3');
+   out = out.replace(/(^|\W)(cats|kittens|kitties|felines)(\W|$)/gi,'$1kittehz$3');
+   out = out.replace(/(^|\W)(rookie|newbie|newb|novice|beginner|apprentice|padawan|freshman|youngster|dilettante|trainee|amateur|fledgling|greenhorn|neophyte|tenderfoot|inexperienced|juvenile)(s?)(\W|$)/gi,'$1n00b$3$4');
+   out = out.replace(/(^|\W)(know)(\W|$)/gi,"$1no$3");
+   out = out.replace(/(^|\W)(knew)(\W|$)/gi,'$1new$3');
+   out = out.replace(/(^|\W)(any\s*way)(\W|$)/gi,"$1neway$3");
+   out = out.replace(/(^|\W)(oh)(\W|$)/gi,'$1o$3');
+   out = out.replace(/(^|\W)(seven|7)(\W|$)/gi,"$1over 9000$3");
+   out = out.replace(/(^|\W)(omg)(\W|$)/gi,"$1ZOMG!!11!$3");
+   out = out.replace(/(^|\W)(oh?\s+my\s+god|holy\s+(shit|cow|smokes?|crap|moley))(\W|$)/gi,"$1omg$4");
+   out = out.replace(/(^|\W)(wat\s+(in\s+)?teh\s+(hell|fuck|heck|blazes))(\W|$)/gi,'$1wtf$5');
+   out = out.replace(/(^|\W)(through)(\W|$)/gi,"$1thru$3");
+   out = out.replace(/(^|\W)(first)(\W|$)/gi,"$11st$3");
+   out = out.replace(/(^|\W)(second)(\W|$)/gi,'$12nd$3');
+   out = out.replace(/(^|\W)(third)(\W|$)/gi,"$13rd$3");
+   out = out.replace(/(^|\W)(fourth)(\W|$)/gi,'$14th$3');
+   out = out.replace(/(^|\W)three/gi,"$13");
+   out = out.replace(/(^|\W)five/gi,'$15');
+   out = out.replace(/(^|\W)six/gi,"$16");
+   out = out.replace(/(^|\W)eight/gi,'$18');
+   out = out.replace(/(^|\W)nine/gi,"$19");
+   out = out.replace(/(^|\W)zero/gi,'$10');
+   out = out.replace(/(^|\W)two/gi,"$12");
+   out = out.replace(/(^|\W)one/gi,'$11');
+   out = out.replace(/(^|\W)(at)(\W|$)/gi,"$1@$3");
+   out = out.replace(/(^|\W)(r\s+u)(\W|$)/gi,'$1ru$3');
+   out = out.replace(/(^|\W)(porno?s?|pornography)(\W|$)/gi,"$1pr0n$3");
+   out = out.replace(/(\w)a([dkprv])e(s?)(\W|$)/gi,"$1ae$2$3$4");
+   out = out.replace(/(^|\W)(time)(\W|$)/gi,'$1tiem$3');
+   out = out.replace(/(^|\W)like(s)?(\W|$)/gi,'$1liek$2$3');
+   out = out.replace(/(^|\W)(sense)(\W|$)/gi,"$1cents$3");
+   out = out.replace(/(^|\W)(head)(\W|$)/gi,'$1hed$3');
+   out = out.replace(/(^|\W)hacks(\W|$)/gi,'$1haxx$2');
+   out = out.replace(/(^|\W)hacked(\W|$)/gi,'$1haXX0red$2');
+   out = out.replace(/(\w{2})ck(\W|$)/gi,'$1k$2');
+   out = out.replace(/(\w{2})cks(\W|$)/gi,'$1xzorz$2');
+   out = out.replace(/(\w{2})cking(\W|$)/gi,'$1xing$2');
+   out = out.replace(/(\w{2})cker(\W|$)/gi,'$1xxor$2');
+   out = out.replace(/(\w{2})ckers(\W|$)/gi,'$1xxorz$2');
+   out = out.replace(/([^s])ks(\W|$)/gi,'$1xz$2');
+   out = out.replace(/(^|\W)ask(\W|$)/gi,'$1ax$2');
+   out = out.replace(/(^|\W)(hey)(\W|$)/gi,'$1hay$3');
+   out = out.replace(/(^|\W)(softwares?)(\W|$)/gi,'$1warez$3');
+   out = out.replace(/(^|\W)help/gi,'$1halp');
+   out = out.replace(/(^|\W)(business)(\W|$)/gi,'$1biz$3');
+   out = out.replace(/(^|\W)(said)(\W|$)/gi,'$1sed$3');
+   out = out.replace(/(^|\W)(says)(\W|$)/gi,'$1sez$3');
+   out = out.replace(/(^|\W)(seriously)(\W|$)/gi,'$1srsly$3');
+   out = out.replace(/(^|\W)(please)(\W|$)/gi,'$1plz$3');
+   out = out.replace(/(^|\W)(really)(\W|$)/gi,'$1rly$3');
+   out = out.replace(/(^|\W)(people)(\W|$)/gi,'$1ppl$3');
+   out = out.replace(/(^|\W)eat(ing|s)?(\W|$)/gi,'$1om nom$2$3');
+   out = out.replace(/(^|\W)(ate)(\W|$)/gi,'$1eated$3');
+   out = out.replace(/(^|\W)(told)(\W|$)/gi,'$1telled$3');
+   out = out.replace(/(^|\W)(held)(\W|$)/gi,'$1holded$3');
+   out = out.replace(/(^|\W)(brought)(\W|$)/gi,'$1brung$3');
+   out = out.replace(/(^|\W)(foods?)(\W|$)/gi,'$1foodz$3');
+   out = out.replace(/(^|\W)(supposed\s+2)(\W|$)/gi,'$1sposed 2$3');
+   out = out.replace(/(^|\W)(supposedly)(\W|$)/gi,'$1supposively$3');
+   out = out.replace(/(^|\W)was(n't)?(\W|$)/gi,'$1wuz$2$3');
+   out = out.replace(/(^|\W)were(n't|\s+not)(\W|$)/gi,'$1wurnt$3');
+   out = out.replace(/(^|\W)(anon)ymous(\W|$)/gi,'$1$2$3');
+   out = out.replace(/(^|\W)(i'm|i\s+am)(\W|$)/gi,'$1im$3');
+   out = out.replace(/(^|\W)(ur\s+\w+[^aius.'])s(\W|$)/gi,'$1$2z$3');
+   out = out.replace(/(^|\W)(teh\s+\w+[^aius.'])s(\W|$)/gi,'$1$2z$3');
+   out = out.replace(/(^|\W)(elite|cream\s+of\s+teh\s+crop|best\s+of\s+teh\s+best|world(\s+|-)class|top(-|\s+)?notch)(\W|$)/gi,'$11337$5');
+   out = out.replace(/(^|\W)(breasts|boobs|boobies)(\W|$)/gi,'$1tits$3');
+   out = out.replace(/(^|\W)(breast|boob)(\W|$)/gi,'$1tit$3');
+   out = out.replace(/(^|\W)(huh)(\W|$)/gi,'$1wut$3');
+   out = out.replace(/(^|\W)(into)(\W|$)/gi,'$1n2$3');
+   out = out.replace(/(^|\W)(though)(\W|$)/gi,'$1tho$3');
+   out = out.replace(/(^|\W)(own)(\W|$)/gi,'$1pwn$3');
+   out = out.replace(/(^|\W)(owned)(\W|$)/gi,'$pwnt$3');
+   out = out.replace(/(^|\W)(owns)(\W|$)/gi,'$1pwnz$3');
+   out = out.replace(/(^|\W)(owner)(\W|$)/gi,'$1pwnz0r$3');
+   out = out.replace(/(^|\W)(owners)(\W|$)/gi,'$1pwnz0rz$3');
+   out = out.replace(/(^|\W)(amen|hallelujah|hooray)(\W|$)/gi,'$1w00t$3');
+   out = out.replace(/(^|\W)(lose)(\W|$)/gi,'$1luze$3');
+   out = out.replace(/(^|\W)(give\s+me)(\W|$)/gi,'$1gimme$3');
+   out = out.replace(/(^|\W)(let\s+me)(\W|$)/gi,'$1lemme$3');
+   out = out.replace(/(^|\W)(going\s+2)(\W|$)/gi,'$1gonna$3');
+   out = out.replace(/(^|\W)want\s+(a|2)(\W|$)/gi,'$1wanna$3');
+   out = out.replace(/(^|\W)(come\s+on)(\W|$)/gi,"$1c'mon$3");
+   out = out.replace(/(^|\W)(out\s+of)(\W|$)/gi,'$1outta$3');
+   out = out.replace(/(^|\W)sum\s+of(\W|$)/gi,'$1summa$2');
+   out = out.replace(/(^|\W)(kind|sort)\s+of(\W|$)/gi,'$1$2a$3');
+   out = out.replace(/(^|\W)moderator(s)?(\W|$)/gi,'$1mod$2$3');
+   out = out.replace(/(^|\W)(father|dad|daddy|papp?a|husband)(\W|$)/gi,'$1old man$3');
+   out = out.replace(/(^|\W)(mother|m[ou]m|m[ou]mmy|mamm?a|wife)(\W|$)/gi,'$1old lady$3');
+   out = out.replace(/(^|\W)their(\W|$)/gi,'$1there$2');
+   out = out.replace(/(^|\W)they're(\W|$)/gi,'$1there$2');
+   out = out.replace(/(\w)'re(\W|$)/gi,"$1'r$2");
+   out = out.replace(/(^|\W)be(\W|$)/gi,'$1b$2');
+   out = out.replace(/(^|\W)keyboard(\W|$)/gi,'$1kbd$2');
+   return(out);
+}
+
+function fucked(text) {
+   var out = '';
+   var fuck = new Array;
+   fuck[33] = [33,0xa1,0x203c,0x2762,0x2763,0xfe57]; // !
+   fuck[63] = [63,0xbf,0x61f,0xfe56,0x203d]; // ?
+   fuck[65] = [65,0xC0,0xC1,0xC2,0xC3,0xC4,0xC5,0x100,0x102,0x104,0x1cd,0x1de,0x1e0,0x1fa,0x200,0x202,0x386,0x1e00,0x1ea0,0x1ea2,0x1ea4,0x1ea6,0x1ea8,0x1eaa,0x1eac,0x1eae,0x1eb0,0x1eb2,0x1eb4,0x1eb6,0x1f0e,0x1f0f,0x1f8e,0x1f8f,0x24b6]; // A
+   fuck[66] = [66,0x181,0x299,0x3b2,0x1e02,0x1e04,0x1e06,0x212c,0x24b7]; // B
+   fuck[67] = [67,0xa9,0xc7,0x106,0x108,0x10a,0x10c,0x186,0x187,0x1e08,0x2102,0x212d,0x24b8]; // C
+   fuck[68] = [68,0x10e,0x110,0x189,0x18a,0x1e0a,0x1e0c,0x1e0e,0x1e10,0x1e12,0x24b9]; // D
+   fuck[69] = [69,0xc8,0xc9,0xca,0xcb,0x112,0x114,0x116,0x118,0x11a,0x18e,0x190,0x1a9,0x204,0x206,0x1e14,0x1e16,0x1e18,0x1e1a,0x1e1c,0x1eb8,0x1eba,0x1ebc,0x1ebe,0x1ec0,0x1ec2,0x1ec4,0x1ec6,0x1f18,0x1f19,0x1f1a,0x1f1b,0x1f1c,0x1f1d,0x24ba,0xffbc,0x2130]; // E
+   fuck[70] = [70,0x191,0x1e1e,0x24bb,0x2131,0x492,0x2132]; // F
+   fuck[71] = [71,0x11c,0x11e,0x120,0x122,0x193,0x1e4,0x1e6,0x1f4,0x262,0x29b,0x1e20,0x24bc]; // G
+   fuck[72] = [72,0x124,0x126,0x29c,0x389,0x4a2,0x4a4,0x4c7,0x1e22,0x1e24,0x1e26,0x1e28,0x1e2a,0x1f98,0x1f99,0x1f9a,0x1f9b,0x1f9c,0x1f9d,0x1f9e,0x1f9f,0x210b,0x210c,0x210d,0x24bd]; // H
+   fuck[73] = [73,0xcc,0xcd,0xce,0xcf,0x128,0x12a,0x12c,0x130,0x208,0x20a,0x26a,0x1e2c,0x1e2e,0x1ec8,0x1eca,0x2110,0x2111,0x24be]; // I
+   fuck[74] = [74,0x134,0x24bf]; // J
+   fuck[75] = [75,0x136,0x198,0x40c,0x41a,0x49a,0x49c,0x49e,0x4a0,0x4c3,0x1e30,0x1e32,0x1e34,0x24c0]; // K
+   fuck[76] = [76,0x139,0x13b,0x13d,0x13f,0x141,0x29f,0x2112,0x24c1]; // L
+   fuck[77] = [77,0x1e3e,0x1e40,0x1e42,0x2133,0x24c2]; // M
+   fuck[78] = [78,0xd1,0x143,0x145,0x147,0x19d,0x274,0x418,0x419,0x4e2,0x4e4,0x1e44,0x1e46,0x1e48,0x1e4a,0x2115,0x24c3]; // N
+   fuck[79] = [79,0xd2,0xd3,0xd4,0xd4,0xd6,0xd8,0x14c,0x14e,0x150,0x1a0,0x1d1,0x1e4c,0x1e4e,0x1e50,0x1e52,0x1ecc,0x1ece,0x24c4]; // O
+   fuck[80] = [80,0x1a4,0x1e54,0x1e56,0x1fec,0x2118,0x2119,0x24c5]; // P
+   fuck[81] = [81,0x211a,0x24c6]; // Q
+   fuck[82] = [82,0x154,0x156,0x158,0x210,0x212,0x280,0x42f,0x1e5a,0x1e5c,0x1e5e,0x211b,0x211c,0x211d,0x24c7]; // R
+   fuck[83] = [83,0x15a,0x15c,0x15e,0x160,0x1a7,0x283,0x1e60,0x1e62,0x1e64,0x1e66,0x1e68,0x24c8]; // S
+   fuck[84] = [84,0x162,0x164,0x166,0x1ac,0x1ae,0x4ac,0x1e6a,0x1e6c,0x1e6e,0x1e70,0x24c9]; // T
+   fuck[85] = [85,0xd9,0xda,0xdb,0xdc,0x168,0x16a,0x16c,0x16e,0x170,0x172,0x1d3,0x1d5,0x1d7,0x1d9,0x1db,0x214,0x216,0x1e72,0x1e74,0x1e76,0x1e78,0x1e7a,0x1ee4,0x1ee6,0x1ee8,0x1eea,0x1eec,0x1eee,0x1ef0,0x24ca]; // U
+   fuck[86] = [86,0x1b2,0x476,0x1e7c,0x1e7e,0x24cb]; // V
+   fuck[87] = [87,0x174,0x428,0x1e80,0x1e82,0x1e84,0x1e86,0x1e88,0x24cc]; // W
+   fuck[88] = [88,0x1e8a,0x1e8c,0x2715,0x2717,0x2718,0x24cd,0x2716]; // X
+   fuck[89] = [89,0xdd,0x176,0x178,0x1b3,0x28f,0x40e,0x423,0x4b0,0x1e8e,0x1f59,0x1f5b,0x1f5d,0x1f5f,0x24ce]; // Y
+   fuck[90] = [90,0x179,0x17b,0x17d,0x1b5,0x1e90,0x1e92,0x1e94,0x2124,0x24cf]; // Z
+   fuck[97] = [97,0xe0,0xe1,0xe2,0xe3,0xe4,0xe5,0x101,0x103,0x105,0x1ce,0x1df,0x1e1,0x1fb,0x201,0x203,0x250,0x3ac,0x3b1,0x1e01,0x1e9a,0x1ea1,0x1ea3,0x1ea5,0x1ea7,0x1ea9,0x1eab,0x1ead,0x1eaf,0x1eb1,0x1eb3,0x1eb5,0x1eb7,0x1f80,0x1f81,0x1f82,0x1f83,0x1f84,0x1f85,0x1f86,0x1f87,0x1fb0,0x1fb1,0x1fb2,0x1fb3,0x1fb4,0x1fb6,0x1fb7,0x249c,0x24d0,]; // a
+   fuck[98] = [98,0x180,0x3b2,0x253,0x1e03,0x1e05,0x1e07,0x249d,0x24d1]; // b
+   fuck[99] = [99,0x107,0x109,0x10b,0x10d,0x188,0x254,0x297,0x4ab,0x1e09,0x249e,0x24d2]; // c
+   fuck[100] = [100,0x10f,0x111,0x256,0x257,0x1e0b,0x1e0d,0x1e0f,0x1e11,0x1e13,0x249f,0x24d3]; // d
+   fuck[101] = [101,0xe8,0xe9,0xea,0xeb,0x113,0x115,0x117,0x119,0x11b,0x1dd,0x258,0x25a,0x454,0x4bd,0x4bf,0x4db,0x1e15,0x1e17,0x1e19,0x1e1b,0x1e1d,0x1eb9,0x1ebb,0x1ebd,0x1ebf,0x1ec1,0x1ec3,0x1ec5,0x1ec7,0x212f,0x220a,0x24a0,0x24d4]; // e
+   fuck[102] = [102,0x192,0x1e1f,0x24a1,0x24d5]; // f
+   fuck[103] = [103,0x11d,0x11f,0x121,0x123,0x1e5,0x1e7,0x260,0x261,0x581,0x1e21,0x210a,0x24a2,0x24d6]; // g
+   fuck[104] = [104,0x125,0x127,0x266,0x267,0x43d,0x570,0x1e23,0x1e25,0x1e27,0x1e29,0x1e2b,0x1e96,0x24a3,0x24d7]; // h
+   fuck[105] = [105,0xec,0xed,0xee,0xef,0x129,0x12b,0x12d,0x12f,0x131,0x1d0,0x209,0x20b,0x268,0x390,0x1e2d,0x1e2f,0x1ec9,0x1ecb,0x1f30,0x1f31,0x1f32,0x1f33,0x1f34,0x1f35,0x1f36,0x1f37,0x24a4,0x24d8]; // i
+   fuck[106] = [106,0x135,0x1f0,0x29d,0x24a5,0x24d9]; // j
+   fuck[107] = [107,0x137,0x199,0x1e9,0x29e,0x45c,0x43a,0x49b,0x49d,0x49f,0x4a1,0x4c4,0x1e31,0x1e33,0x1e35,0x24a6,0x24da]; // k
+   fuck[108] = [108,0x13a,0x13c,0x13e,0x140,0x142,0x26d,0x1e37,0x1e39,0x1e3b,0x1e3d,0x2113,0x24a7,0x24db]; // l
+   fuck[109] = [109,0x271,0x28d,0x43c,0x1e3f,0x1e41,0x1e43,0x24a8,0x24dc]; // m
+   fuck[110] = [110,0xf1,0x144,0x146,0x148,0x149,0x272,0x273,0x438,0x439,0x4e3,0x4e5,0x57c,0x1e45,0x1e47,0x1e49,0x1e4b,0x207f,0x24a9,0x24dd]; // n
+   fuck[111] = [111,0xf2,0xf3,0xf4,0xf5,0xf6,0xf8,0x14d,0x14f,0x151,0x1a1,0x20d,0x20f,0x1e4d,0x1e4f,0x1e51,0x1e53,0x1ecd,0x1ecf,0x1ed1,0x1ed3,0x1ed5,0x1ed7,0x1ed9,0x2134,0x24aa,0x24de]; // o
+   fuck[112] = [112,0x1a5,0x3c1,0x1e55,0x1e57,0x24ab,0x24df]; // p
+   fuck[113] = [113,0x563,0x566,0x24ac,0x24e0]; // q
+   fuck[114] = [114,0x155,0x157,0x159,0x211,0x213,0x279,0x27c,0x44f,0x1e59,0x1e5b,0x1e5d,0x1e5f,0x24ad,0x24e1]; // r
+   fuck[115] = [115,0x15b,0x15d,0x15f,0x161,0x1a8,0x282,0x1e61,0x1e63,0x1e65,0x1e67,0x1e69,0x24ae,0x24e2]; // s
+   fuck[116] = [116,0x163,0x165,0x167,0x1ab,0x287,0x288,0x3c4,0x1e6b,0x1e6d,0x1e6f,0x1e71,0x1e97,0x24af,0x24e3]; // t
+   fuck[117] = [117,0xf9,0xfa,0xfb,0xfc,0x169,0x16b,0x16d,0x16f,0x171,0x173,0x215,0x217,0x289,0x3cb,0x3cd,0x1e73,0x1e75,0x1e77,0x1e79,0x1e7b,0x1ee7,0x1ee9,0x1eeb,0x1eed,0x1eef,0x1ef1,0x1fe6,0x1fe7,0x1fe0,0x1fe1,0x24b0,0x24e4]; // u
+   fuck[118] = [118,0x28c,0x475,0x477,0x1e7d,0x1e7f,0x24b1,0x24e5]; // v
+   fuck[119] = [119,0x175,0x26f,0x3c9,0x448,0x47f,0x1e81,0x1e83,0x1e85,0x1e87,0x1e89,0x1e98,0x24b2,0x24e6]; // w
+   fuck[120] = [120,0x3c7,0x1e8b,0x1e8d,0xd7,0x2716,0x24b3,0x24e7]; // x
+   fuck[121] = [121,0xfd,0xff,0x177,0x1b4,0x28e,0x4ef,0x1e8f,0x1ef3,0x1ef5,0x1ef7,0x1ef9,0x24b4,0x24e8]; // y
+   fuck[122] = [122,0x17a,0x17c,0x17e,0x290,0x291,0x1e91,0x1e93,0x1e95,0x24b5,0x24e9]; // z
+
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (typeof fuck[chr] != 'undefined') {
+        var tmp = fuck[chr][Math.floor(Math.random()*fuck[chr].length)];
+        chr = tmp;
+      }
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function SuperHero() {
+  var adj = ['Nefarious','Magnificent','Unstoppable','Wonderful','Vengeful','Amazing','Incredible','Fantastic','Invincible','Dastardly','Impossible','Evil','Omnipotent','Twisted','Fearsome','Inconceivable','Terrifying','Intangible','Unscrupulous','Freakish','Incontinent','Cowardly','Festering','Diseased','Malevolent','Benevolent','Malignant','Flamboyant','Timid','Well-Dressed','Tyrannical','Despicable','Absurd','Criminally-Insane','Nonsensical','Preposterous','Extravagant','Extraordinary','Eccentric','Inexplicable','Implausible','Disturbed','Ludicrous','Unimaginable','Unthinkable','Astonishing','Awesome','Xenophobic','Stupefying','Marvelous','Colossal','Prodigious','Portentous','Malicious','Heinous','Monstrous','Ferocious','Ghastly','Savage','Unholy','Diabolical','Bicameral','Super','Sinister','Infernal','Outrageous','Uproarious','Outlandish' ];
+  var title = ['Mr. %1','Mr. %1','Sensei %1','Se\u00f1or %1','Dr. %1','Captain %1','Commander %1','Sergeant %1','Admiral %1','General %1','Pastor %1','King %1','Prince %1','Count %1','Professor %1','Duc %D%1','Comte %D%1','Baron %D%1','Baron von %1','%1Boy','%1Girl','%1Man','%1' ];
+  var w1 = ['Moose,Moosie','Strange,Strangey','Weird,Weirdo','Brain,Brainy','Hate,Hatey','Monkey,Monkey','Taco,Taco','Corn,Corny','Cheese,Cheesey','Ghost,Spooky','Doom,Doomy','Doom,Doomy','Death,Deathy','Skull,Skully','Chum,Chummy','Bomb,Explodey','Spark,Sparky','Mensch,Menschy','Chicken,Chickeny','Pork,Porky','Pig,Piggy','Cow,Cowwy','Beef,Beefy','Waffle,Waffley','Soap,Soapy','Scum,Scummy','Eel,Eely','Art,Artsy','Fish,Fishy','Toast,Toasty','Cookie,Cookie','Crack,Cracker','Kill,Killy','Blood,Bloody','Goo,Gooey','Poo,Poopy','Llama,Llama','Clam,Clammy','Fire,Flamey','Star,Starry','Space,Spacey','Goat,Goaty','Sass,Sassy','Booze,Saucey','Beer,Drinky','Justice,Juicy','Action,Actiony','Flesh,Fleshy','Knife,Stabby','Gun,Shooty','Vomit,Pukey','Danger,Danger','Insanity,Insano','Cosmos,Cosmic','God,Goody','Demon,Devil','Trash,Trashy','Adventure,Adventure','Clown,Goofy','Doll,Dolly','Fight,Fighty','Pain,Injury','Hell,Hell','Trauma,Traumatic','Soul,Groovy','Punch,Punchy','Chode,Choder','Kick,Kicky','Satan,Beelzebub','Squid,Squiddy','Dough,Doughy','Cult,Milita','Thunder,Lightning','Poison,Toxic','Chaos,Chaotic','Boom,Boomy','Handicap,Gimpy','Magic,Magicky','Kink,Kinky','Psycho,Psychotic','Funk,Funky','Apocalypse,Apocalypto','Terror,Jihad','Stink,Stinky','Murder,Evil','Storm,Stormy','Pop,Bubblegum','Peepee,Squirty','Sasquatch,Bigfoot','Messiah,Jesus','Mormon,Crazy','Techno,Techy','Pimple,Pimpley' ];
+  var w2 = ['%1Bringer','%1Burner','%2%1','%2%3','%4%1','%1Scrubber','%1Taster','%1Lover','%1Stopper','%1Eater','%1Ranger','%1Storm','%1Pleaser','%1Chewer','%1Pirate','%1Stealer','%1Master','%1Licker','%1Hole','%1Collector','%1Killer','%1Chooser','%1Hunter','%1Squeezer','%1Avenger','%1Toucher','%1Grabber','%2 Mc%1Pants','%2 Mc%1Pants','%2Head','%1Head','%1Face','Mega%1','X-%1','Bionic%1','Robo%1','Ultra%1','\u00dcber%1','Super%1','Electro%1','Aqua%1','%1tastic' ];
+  var team = ['%1 Friends','%1 Amigos','%1 Guild','%1 Bunch','%1 Avengers','%1 Association','Association of %1','%1 Gang','%1 Kids','%1 Teens','%1 Comrades','%1 Pals','%1 League','%1 Squad','%1 Team','%1 Congress','%1 Fiends','%1 Trio','%1 Confederation','%1 Federation','%1 Quartet','%1 Brothers','%1 Brethren','%1 Sisters','Sisterhood of %1','Brotherhood of %1','%1 Men','%1 Pirates','%1 Women','%1 Boys','%1 Girls','%1 Seven','%1 Five','%1 Police','%1 Coalition','%1 Titans','%1 Rangers','%1 Cartel','%1 Troopers','%1 Alliance','%1 Axis','%1 Scouts','%1 Force','%1 Club','%1 Fellowship','%1 Fraternity','%1 Foundation','%1 Cadre','Order of %1','%1 Order','%1 Junta','%1 Union','%1 Committee','%1 Corps' ];
+
+  function randpop(arr) {
+    return( arr.splice(Math.floor(Math.random()*(arr.length)),1).toString() );
+  }
+  
+  var word1 = randpop(w1).split(',');
+  var word2 = randpop(w1).split(',');
+  var sname = randpop(w2);
+  sname = sname.replace('%1',word1[0]);
+  sname = sname.replace('%2',word1[1]);
+  sname = sname.replace('%3',word2[0]);
+  sname = sname.replace('%4',word2[1]);
+  sname = randpop(title).replace('%1',sname);
+  sname = sname.replace(/%D([AEIOU\u00dcaeiou])/,"d'$1");
+  sname = sname.replace(/%D/,'de ');
+  sname = 'The ' + randpop(adj) + ' ' + sname;
+
+  var steam = randpop(team);
+  steam = steam.replace('%1',randpop(w1).split(',')[Math.floor(Math.random()*2)]);
+  steam = 'The ' + randpop(adj) + ' ' + steam;
+  if (Math.floor(Math.random()*4) == 0) {
+      steam += ' of America';
+  } else if (Math.floor(Math.random()*4) == 0) {
+      steam += ' of DOOM!';
+  }
+  return(sname + ' and ' + steam);
+}
+
+function banner(text) {
+var letters = "9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9567,9472,9472,9508 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,160,160,9524 X 9573,9472,9488,160 / 9553,160,9474,160 / 9553,160,9474,160 / 9567,9472,9524,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,9472,9472,9496 X 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9561,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9567,9472,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9576,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9567,9472,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9576,160,160,160 X 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,9472,9488 / 9553,160,160,9474 / 9561,9472,9472,9496 X 9573,160,160,9516 / 9553,160,160,9474 / 9553,160,160,9474 / 9567,9472,9472,9508 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,160,160,9524 X 9573 / 9553 / 9553 / 9553 / 9553 / 9553 / 9576 X 160,160,160,9573 / 160,160,160,9553 / 160,160,160,9553 / 160,160,160,9553 / 160,160,160,9553 / 9474,160,160,9553 / 9492,9472,9472,9564 X 9573,160,9484,160 / 9553,160,9474,160 / 9553,160,9474,160 / 9567,9472,9524,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,160,160,9524 X 9573,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9576,9472,9472,9496 X 9573,9472,9516,9472,9488 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9524,160,9474 / 9576,160,160,160,9524 X 9573,9516,160,160,9516 / 9553,9474,160,160,9474 / 9553,9492,9488,160,9474 / 9553,160,9474,160,9474 / 9553,160,9492,9488,9474 / 9553,160,160,9474,9474 / 9576,160,160,9492,9524 X 9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9567,9472,9472,9496 / 9553,160,160,160 / 9553,160,160,160 / 9576,160,160,160 X 9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9532,9496 X 9573,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9567,9472,9516,9496 / 9553,160,9492,9488 / 9553,160,160,9474 / 9576,160,160,9524 X 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9561,9472,9472,9488 / 160,160,160,9474 / 160,160,160,9474 / 9561,9472,9472,9496 X 9484,9472,9573,9472,9488 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9576,160,160 X 9573,160,160,9516 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9472,9524 X 9573,160,160,160,9516 / 9553,160,160,9484,9496 / 9553,160,160,9474,160 / 9553,160,9484,9496,160 / 9553,160,9474,160,160 / 9553,9484,9496,160,160 / 9561,9496,160,160,160 X 9573,160,160,160,9516 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9561,9472,9524,9472,9496 X 9573,160,160,160,9516 / 9562,9559,160,9484,9496 / 160,9553,9484,9496,160 / 160,9562,9578,9559,160 / 160,9484,9496,9553,160 / 9484,9496,160,9562,9559 / 9524,160,160,160,9576 X 9573,160,160,160,9516 / 9553,160,160,160,9474 / 9553,160,160,160,9474 / 9561,9472,9573,9472,9496 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9576,160,160 X 9555,9472,9472,9488 / 160,160,160,9474 / 160,160,9484,9496 / 160,9484,9496,160 / 9555,9496,160,160 / 9553,160,160,160 / 9561,9472,9472,9496";
+var lletter = "160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 160,9472,9472,9558 / 9484,9472,9472,9570 / 9474,160,160,9553 / 9492,9472,9472,9576 X 9573,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9567,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,9472,9472,9496 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9561,9472,9472,9496 X 160,160,160,9573 / 160,160,160,9553 / 160,160,160,9553 / 9484,9472,9472,9570 / 9474,160,160,9553 / 9474,160,160,9553 / 9492,9472,9472,9576 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 9567,9472,9472,9496 / 9553,160,160,160 / 9561,9472,9472,9496 X 160,9555,9472,9488 / 160,9553,160,9474 / 160,9553,160,160 / 9472,9579,9472,160 / 160,9553,160,160 / 160,9553,160,160 / 160,9576,160,160 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,9472,9488 / 9561,9472,9472,9496 X 9573,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9567,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,160,160,9524 X 160 / 9573 / 9576 / 9573 / 9553 / 9553 / 9576 X 160,160,160,160 / 160,160,160,9573 / 160,160,160,9576 / 160,160,160,9573 / 160,160,160,9553 / 160,160,160,9553 / 9492,9472,9472,9564 X 9573,160,160,160 / 9553,160,160,160 / 9553,160,9474,160 / 9567,9472,9524,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,160,160,9524 X 160 / 9573 / 9553 / 9553 / 9553 / 9553 / 9576 X 160,160,160,160,160 / 160,160,160,160,160 / 160,160,160,160,160 / 9573,9472,9516,9472,9488 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9576,160,9524,160,9524 X 160,160,160,160,160,160 / 160,160,160,160,160 / 160,160,160,160,160 / 9573,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,160,160,9524 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9472,9496 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9573,9472,9472,9488 / 9553,160,160,9474 / 9567,9472,9472,9496 / 9576,160,160,160 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9532,9496 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9573,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9576,160,160,160 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 9561,9472,9472,9488 / 160,160,160,9474 / 9561,9472,9472,9496 X 160,160,160 / 160,160,160 / 160,9558,160 / 9472,9579,9472 / 160,9553,160 / 160,9553,160 / 160,9576,160 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9573,160,160,9516 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9472,9524 X 160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 9573,160,160,9516 / 9553,160,9484,9496 / 9553,9484,9496,160 / 9561,9496,160,160 X 160,160,160,160,160 / 160,160,160,160,160 / 160,160,160,160,160 / 9573,160,160,160,9516 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9561,9472,9524,9472,9496 X 160,160,160,160,160 / 160,160,160,160,160 / 9573,160,160,160,9516 / 9562,9559,9484,9472,9496 / 160,9562,9578,9559,160 / 9484,9472,9496,9562,9559 / 9524,160,160,160,9576 X 160,160,160,160,160 / 160,160,160,160,160 / 160,160,160,160,160 / 9573,160,160,160,9516 / 9561,9472,9573,9472,9496 / 160,160,9553,160,160 / 160,160,9576,160,160 X 160,160,160,160 / 160,160,160,160 / 9555,9472,9472,9488 / 160,160,9484,9496 / 160,9484,9496,160 / 9555,9496,160,160 / 9561,9472,9472,9496";
+//  var letters = "9555,9472,9472,9488 / 9553,160,160,9474 / 9567,9472,9472,9508 / 9553,160,160,9474 / 9576,160,160,9524 X 9573,9472,9488,160 / 9553,160,9474,160 / 9567,9472,9524,9488 / 9553,160,160,9474 / 9576,9472,9472,9496 X 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9561,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9576,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,160 / 9567,9472,160,160 / 9553,160,160,160 / 9576,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,160 / 9567,9472,160,160 / 9553,160,160,160 / 9576,160,160,160 X 9555,9472,9472,9488 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,9472,9488 / 9561,9472,9472,9496 X 9573,160,160,9516 / 9553,160,160,9474 / 9567,9472,9472,9508 / 9553,160,160,9474 / 9576,160,160,9524 X 9573 / 9553 / 9553 / 9553 / 9576 X 160,160,160,9573 / 160,160,160,9553 / 160,160,160,9553 / 9474,160,160,9553 / 9492,9472,9472,9564 X 9573,160,9484,160 / 9553,160,9474,160 / 9567,9472,9524,9488 / 9553,160,160,9474 / 9576,160,160,9524 X 9573,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9553,160,160,160 / 9576,9472,9472,9496 X 9573,9472,9516,9472,9488 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9524,160,9474 / 9576,160,160,160,9524 X 9573,9516,160,160,9516 / 9553,9492,9488,160,9474 / 9553,160,9474,160,9474 / 9553,160,9492,9488,9474 / 9576,160,160,9492,9524 X 9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9472,9496 X 9573,9472,9472,9488 / 9553,160,160,9474 / 9567,9472,9472,9496 / 9553,160,160,160 / 9576,160,160,160 X 9555,9472,9472,9488 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9532,9496 X 9573,9472,9472,9488 / 9553,160,160,9474 / 9567,9472,9516,9496 / 9553,160,9492,9488 / 9576,160,160,9524 X 9555,9472,9472,9488 / 9553,160,160,160 / 9561,9472,9472,9488 / 160,160,160,9474 / 9561,9472,9472,9496 X 9484,9472,9573,9472,9488 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9553,160,160 / 160,160,9576,160,160 X 9573,160,160,9516 / 9553,160,160,9474 / 9553,160,160,9474 / 9553,160,160,9474 / 9561,9472,9472,9524 X 9573,160,160,160,9516 / 9553,160,160,9484,9496 / 9553,160,9484,9496,160 / 9553,9484,9496,160,160 / 9561,9496,160,160,160 X 9573,160,160,160,9516 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9553,160,9474,160,9474 / 9561,9472,9524,9472,9496 X 9573,160,160,9516,160 / 9562,9559,9484,9496,160 / 160,9562,9578,9559,160 / 160,9484,9496,9562,9559 / 160,9524,160,160,9576 X 9573,160,160,160,9516 / 9553,160,160,160,9474 / 9561,9472,9573,9472,9496 / 160,160,9553,160,160 / 160,160,9576,160,160 X 9555,9472,9472,9488 / 160,160,9484,9496 / 160,9484,9496,160 / 9555,9496,160,160 / 9561,9472,9472,9496";
+  var lets = [];
+  for (var i=0;i<letters.split(' X ').length;i++) {
+    var x = letters.split(' X ')[i];
+    lets[i] = [];
+    for (var j=0;j<x.split(' / ').length;j++) {
+      var y = x.split(' / ')[j];
+      lets[i][j] = [];
+      for (var k=0;k<y.split(',').length;k++) {
+        var z = y.split(',')[k];
+        lets[i][j][k] = String.fromCharCode(z);
+      }
+    }
+  }
+  for (var i=0;i<lletter.split(' X ').length;i++) {
+    var x = lletter.split(' X ')[i];
+    lets[i+26] = [];
+    for (var j=0;j<x.split(' / ').length;j++) {
+      var y = x.split(' / ')[j];
+      lets[i+26][j] = [];
+      for (var k=0;k<y.split(',').length;k++) {
+        var z = y.split(',')[k];
+        lets[i+26][j][k] = String.fromCharCode(z);
+      }
+    }
+  }
+  var out = '';
+  var foo = text;
+  var bar = foo.split('\n');
+  for (var i=0; i<bar.length; i++) {
+    out += '\n';
+    var str = ['','','','','','',''];
+    for (var j=0; j<bar[i].length; j++) {
+      c = bar[i].charCodeAt(j);
+      if ( c == 32 ) {
+        for (var k=0; k<7; k++) str[k] += String.fromCharCode(160) + String.fromCharCode(160);
+      } else if (c > 64 && c < 91) {
+        for (var k=0; k<7; k++) {
+          for (var l=0; l < lets[c - 65][k].length; l++) str[k] += lets[c - 65][k][l];
+          str[k] += String.fromCharCode(160);
+        }
+      } else if (c > 96 && c < 123) {
+        for (var k=0; k<7; k++) {
+          for (var l=0; l < lets[c - 71][k].length; l++) str[k] += lets[c - 71][k][l];
+          str[k] += String.fromCharCode(160);
+        }
+      }
+    }
+    out += str.join('\n');
+  }
+  return(out);
+}
+
+function circled(text) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr > 64 && chr < 91) {
+         chr += 9333;
+      }
+      if (chr > 96 && chr < 123) {
+         chr += 9327;
+      }
+      if (chr > 48 && chr < 58) {
+         chr += 9263;
+      }
+      if (chr == 42) { chr = 8859; }
+      if (chr == 43) { chr = 8853; }
+      if (chr == 45) { chr = 8861; }
+      if (chr == 47) { chr = 8856; }
+      if (chr == 48) { chr = 9450; }
+      if (chr == 61) { chr = 8860; }
+      if (chr == 92) { chr = 8416; }
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function decircled(text) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr > 9397 && chr < 9424) {
+         chr -= 9333;
+      }
+      if (chr > 9423 && chr < 9450) {
+         chr -= 9327;
+      }
+      if (chr > 9311 && chr < 9323) {
+         chr -= 9263;
+      }
+      if (chr == 8859) { chr = 42; }
+      if (chr == 8853) { chr = 43; }
+      if (chr == 8861) { chr = 45; }
+      if (chr == 8856) { chr = 47; }
+      if (chr == 9450) { chr = 48; }
+      if (chr == 8860) { chr = 61; }
+      if (chr == 8416) { chr = 92; }
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function fullWidth(text) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr == 32) chr = 12288;
+      if (chr > 32 && chr < 127) chr += 65248;
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function deFullWidth(text) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr == 12288) chr = 32;
+      if (chr > 65280 && chr < 65375) chr -= 65248;
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function Reverse(text) {
+  return text.split('').reverse().join('');
+}
+
+function HEX(text,space) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var hx,derp;
+      var chr = text.charCodeAt(i);
+      if (chr > 255) {
+         hx = "0000" + chr.toString(16).toUpperCase();
+         derp = hx.substr(hx.length-4,hx.length);
+      } else {
+         hx = "00" + chr.toString(16).toUpperCase();
+         derp = hx.substr(hx.length-2,hx.length);
+      }
+      if (space) derp = derp + ' ';
+      out = out + derp;
+   }
+   return(out);
+}
+
+function deHEX(text) {
+  var str=text.toUpperCase();
+  var out = '';
+  var hx = [];
+  hx[48] =  0; hx[49] =  1; hx[50] =  2; hx[51] =  3;
+  hx[52] =  4; hx[53] =  5; hx[54] =  6; hx[55] =  7;
+  hx[56] =  8; hx[57] =  9; hx[65] = 10; hx[66] = 11;
+  hx[67] = 12; hx[68] = 13; hx[69] = 14; hx[70] = 15;
+  str = str.replace(/[^0-9A-F]/g,'');
+  for (var i=0; i < str.length; i+=2) {
+    var x = (hx[str.charCodeAt(i)] << 4) + hx[str.charCodeAt(i+1)];
+    out += String.fromCharCode(x);
+  }
+  return(out);
+}
+
+function BIN(text,space) {
+   var bits = ['0000','0001','0010','0011','0100','0101','0110','0111',
+            '1000','1001','1010','1011','1100','1101','1110','1111'];
+   text = HEX(text,space);
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var derp = text.substr(i,1);
+      var chr = text.charCodeAt(i);
+      if (chr > 47 && chr < 58) {
+         derp = bits[chr - 48];
+      } else if (chr > 64 && chr < 71) {
+         derp = bits[chr - 55];
+      }
+      out = out + derp;
+   }
+   return(out);
+}
+
+function deBIN(text) {
+  str = text.replace(/[^01]/g,'');
+  var out = '';
+  var i = 0;
+  var bit = 0;
+  var chr = 0;
+  while (i < str.length) {
+    if (bit == 8) {
+      out += String.fromCharCode(chr);
+      chr = 0; bit = 0;
+    }
+    chr = (chr << 1);
+    if (str.charAt(i++) == '1') ++chr;
+    ++bit;
+  }
+  if (chr > 0) out += String.fromCharCode(chr);
+  return(out);
+}
+
+function ROT13(text) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr > 64 && chr < 92) {
+         chr = (((chr - 65) + 13) % 26) + 65;
+      }
+      if (chr > 96 && chr < 123) {
+         chr = (((chr - 97) + 13) % 26) + 97;
+      }
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function CShift(text,amt) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (amt > 0) {
+         if (chr > 64 && chr < 92) {
+            chr = (((chr - 65) + amt) % 26) + 65;
+         }
+         if (chr > 96 && chr < 123) {
+            chr = (((chr - 97) + amt) % 26) + 97;
+         }
+      } else {
+         if (chr > 64 && chr < 92) {
+            chr = (chr - 65) + amt;
+            if (chr < 0) chr = 26 + chr;
+            chr += 65;
+         }
+         if (chr > 96 && chr < 123) {
+            chr = (chr - 97) + amt;
+            if (chr < 0) chr = 26 + chr;
+            chr += 97;
+         }
+      }
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
+function encodeBase64(text,estr,len) {
+   var out = '';
+   var chr = [0,0,0];
+   var enc = [0,0,0,0];
+   var i=0;
+   while (i < text.length) {
+     chr[0] = text.charCodeAt(i++);
+     chr[1] = text.charCodeAt(i++);
+     chr[2] = text.charCodeAt(i++);
+     enc[0] = chr[0] >> 2;
+     enc[1] = ((chr[0] & 3) << 4) + (chr[1] >> 4);
+     enc[2] = ((chr[1] & 15) << 2) + (chr[2] >> 6);
+     enc[3] = chr[2] & 63;
+     if (isNaN(chr[2])) enc[3] = 64;
+     if (isNaN(chr[1])) enc[2] = 64;
+     out += estr.charAt(enc[0]) + estr.charAt(enc[1]) + estr.charAt(enc[2]) + estr.charAt(enc[3]);
+   }
+   if (len > 0) {
+      var pat = "(["+estr.replace(/([\[\]\(\)\{\}\+\*\^\$\\\/\.])/g,'\\$1')+"]{"+len+"})";
+      var re = new RegExp(pat, 'g');
+      return(out.replace(re, '$1'+String.fromCharCode(10)));
+//      return(out.replace(/([A-Za-z0-9+\/=]{76})/g,'$1'+String.fromCharCode(10)));
+   } else {
+      return(out);
+   }
+}
+
+function decodeBase64(text,estr) {
+   var out = '';
+   var i=0;
+   while (i < text.length) {
+     var chr = [0,0,0];
+     var enc = [64,64,64,64];
+     var j=0;
+     while (1) {
+       var z = estr.indexOf(text.charAt(i));
+       if (z >= 0) enc[j++] = z;
+       ++i;
+       if (j > 3) break;
+       if (i >= text.length) break;
+     }
+     chr[0] = ((enc[0] << 2) & 252) + ((enc[1] >> 4) & 3);
+     chr[1] = ((enc[1] << 4) & 240) + ((enc[2] >> 2) & 15);
+     chr[2] = ((enc[2] << 6) & 192) + (enc[3] & 63);
+     out += String.fromCharCode(chr[0]); 
+     if (enc[2] != 64) out += String.fromCharCode(chr[1]); 
+     if (enc[3] != 64) out += String.fromCharCode(chr[2]);
+   }
+   return(out);
+}
+
+function transR2E(text) {
+  var out = '';
+  ascii = ['Yo','','','','','','Yi','','','','','','','','','A','B','V','G','D','Ye','Zh','Z','I','Y','K','L','M','N','O','P','E','S','T','U','F','H','Ts','Ch','Sh','Shch','','I','','E','Yu','Ya','a','b','v','g','d','ye','zh','z','i','y','k','l','m','n','o','p','r','s','t','u','f','h','ts','ch','sh','shch','','i','','e','yu','ya','','yo'];
+  for (var i=0; i < text.length; i++) {
+    var chr = text.charCodeAt(i);
+    if (chr > 0x400 && chr < 0x452) {
+      out += ascii[chr - 0x401];
+    } else {
+      out += text.charAt(i);
+    }
+  }
+  return(out);
+}
+
+function transK2E(text) {
+  var out = '';
+  // Hirigana U+3041 - U+3094
+  // Katakana U+30A1 - U+30FA
+  var kascii = ['a','a','i','i','u','u','e','e','o','o','ka','ga','ki','gi','ku','gu','ke','ge','ko','go','sa','za','shi','ji','su','zu','se','ze','so','zo','ta','da','chi','ji','tsu','tsu','zu','te','de','to','do','na','ni','nu','ne','no','ha','ba','pa','hi','bi','pi','fu','bu','pu','he','be','pe','ho','bo','po','ma','mi','mu','me','mo','ya','ya','yu','yu','yo','yo','ra','ri','ru','re','ro','wa','wa','wi','we','wo','n','vu','ka','ke','va','vi','ve','vo'];
+  for (var i=0; i < text.length; i++) {
+    var chr = text.charCodeAt(i);
+    if (chr > 0x30a0 && chr < 0x30fb) {
+      out += kascii[chr - 0x30a1];
+    } else if (chr > 0x3040 && chr < 0x3095) {
+      out += kascii[chr - 0x3041];
+    } else {
+      out += text.charAt(i);
+    }
+  }
+  // combine dipthong digraphs
+  out = out.replace(/([knhmrgpb])i(ya|yu|yo)/g,'$1$2');
+  out = out.replace(/(sh|ch|j)iy([auo])/g,'$1$2');
+  // Change vowel + prolonged sound mark to vowel + macron.
+  out = out.replace(/a\u30fc/g,'\u0101');
+  out = out.replace(/e\u30fc/g,'\u0113');
+  out = out.replace(/i\u30fc/g,'\u012b');
+  out = out.replace(/o\u30fc/g,'\u014d');
+  out = out.replace(/u\u30fc/g,'\u016b');
+  return(out);
+}
+
+
+function morse(text) {
+   var out = [];
+   var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,?'!/()&:;=+-_\"$@ ";
+   var code = ['.-','-...','-.-.','-..','.','..-.','--.','....','..','.---',
+               '-.-','.-..','--','-.','---','.--.','--.-','.-.','...','-',
+               '..-','...-','.--','-..-','-.--','--..','-----','.----',
+               '..---','...--','....-','.....','-....','--...','---..',
+               '----.','.-.-.-','--..--','..--..','.----.','-.-.--','-..-.',
+               '-.--.','-.--.-','.-...','---...','-.-.-.','-...-','.-.-.',
+               '-....-','..--.-','.-..-.','...-..-','.--.-.','/'];
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.toUpperCase().charAt(i);
+      var xch = alpha.indexOf(chr);
+      if (xch >= 0) {
+         out.push(code[xch]);
+      } else {
+         out.push(text.charAt(i));
+      }
+   }
+   return(out.join(' '));
+}
+
+function demorse(text) {
+   var out = '';
+   var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.,?'!/()&:;=+-_\"$@ ";
+   var code = ['.-','-...','-.-.','-..','.','..-.','--.','....','..','.---',
+               '-.-','.-..','--','-.','---','.--.','--.-','.-.','...','-',
+               '..-','...-','.--','-..-','-.--','--..','-----','.----',
+               '..---','...--','....-','.....','-....','--...','---..',
+               '----.','.-.-.-','--..--','..--..','.----.','-.-.--','-..-.',
+               '-.--.','-.--.-','.-...','---...','-.-.-.','-...-','.-.-.',
+               '-....-','..--.-','.-..-.','...-..-','.--.-.','/'];
+   var letters = text.split(' ');
+   for (var i = 0; i < letters.length; i++) {
+      if (letters[i] == '') {
+         out += ' ';
+      } else {
+         for (var j = 0; j <= code.length; j++) {
+            if (j == code.length) {
+               out += letters[i];
+               break;
+            }
+            if (code[j] == letters[i]) {
+               out += alpha[j];
+               break;
+            }
+         }           
+      }
+   }
+   return(out);
+}
+
+function az2count1(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 64 && c < 91) {
+      c -= 64;
+      var fmt = "0" + c.toString();
+      outstr += fmt.substr(-2);
+    } else if (c > 96 && c < 123) {
+      c -= 96;
+      var fmt = "0" + c.toString();
+      outstr += fmt.substr(-2);
+    } else {
+      outstr += instr.charAt(i);
+    }
+  }
+  return(outstr);
+}
+
+function az2count0(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 64 && c < 91) {
+      c -= 65;
+      var fmt = "0" + c.toString();
+      outstr += fmt.substr(-2);
+    } else if (c > 96 && c < 123) {
+      c -= 97;
+      var fmt = "0" + c.toString();
+      outstr += fmt.substr(-2);
+    } else {
+      outstr += instr.charAt(i);
+    }
+  }
+  return(outstr);
+}
+
+
+function qwerty2dvorak(text) {
+   var out = '';
+   var dvorak = "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL\"POYGK<QF:/\\=^{`axje.uidchtnmbrl'poygk,qf;?|+~";
+   for (var i = 0; i < text.length; i++) {
+      var c = text.charCodeAt(i);
+      if (c > 0x20 && c < 0x7F) {
+         out += dvorak.charAt(c - 0x21);
+      } else {
+         out += text.charAt(i);
+      }
+   }
+   return(out);
+}
+
+function dvorak2qwerty(text) {
+   var out = '';
+   var qwerty = "!Q#$%&q()*}w'e[0123456789ZzW]E{@ANIHDYUJGCVPMLSRXO:KF><BT?-\\=^\"`anihdyujgcvpmlsrxo;kf.,bt/_|+~";
+   for (var i = 0; i < text.length; i++) {
+      var c = text.charCodeAt(i);
+      if (c > 0x20 && c < 0x7F) {
+         out += qwerty.charAt(c - 0x21);
+      } else {
+         out += text.charAt(i);
+      }
+   }
+   return(out);
+}
+
+function radio(text) {
+   var out = [];
+   var alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789~`!@#$%^&*()-_=+[]{}\\|:;'\"<>,./? \n";
+   var code = ['ALPHA','BRAVO','CHARLIE','DELTA','ECHO','FOXTROT','GOLF','HOTEL','INDIA','JULIET','KILO','LIMA','MIKE','NOVEMBER','OSCAR','PAPA','QUEBEC','ROMEO','SIERRA','TANGO','UNIFORM','VICTOR','WHISKEY','XRAY','YANKEE','ZULU','alpha','bravo','charlie','delta','echo','foxtrot','golf','hotel','india','juliet','kilo','lima','mike','november','oscar','papa','quebec','romeo','sierra','tango','uniform','victor','whiskey','xray','yankee','zulu','Zero','One','Two','Three','Four','Five','Six','Seven','Eight','Niner','(tilde)','(backtick)','(bang)','(at)','(pound sign)','(dollar sign)','(percent sign)','(caret)','(ampersand)','(star)','(open paren)','(close paren)','(hyphen)','(underscore)','(equal sign)','(plus sign)','(open bracket)','(close bracket)','(open brace)','(close brace)','(backslash)','(vertical bar)','(colon)','(semicolon)','(apostrophe)','(double quote)','(less-than sign)','(greater-than sign)','(comma)','(dot)','(slash)','(question mark)','(space)','(enter)'];
+   for (var i = 0; i < text.length; i++) {
+      var chr = alpha.indexOf(text.charAt(i));
+      if (chr >= 0) {
+         out.push(code[chr]);
+      } else {
+         out.push('(???)');
+      }
+   }
+   return(out.join('-'));
+}
+
+function dURI(text) {
+   var out = decodeURI(text);
+   out = out.replace(/%23/g,'#');
+   out = out.replace(/%24/g,'$');
+   out = out.replace(/%26/g,'&');
+   out = out.replace(/%2b/gi,'+');
+   out = out.replace(/%2c/gi,',');
+   out = out.replace(/%2f/gi,'/');
+   out = out.replace(/%3a/gi,':');
+   out = out.replace(/%3b/gi,';');
+   out = out.replace(/%3d/gi,'=');
+   out = out.replace(/%3f/gi,'?');
+   out = out.replace(/%40/g,'@');
+   return(out);
+}
+
+function mungeIt(func) {
+   var box = document.getElementById('mungeBox');
+   var text = '';
+   var utf8 = document.getElementById('Encoding').options[document.getElementById('Encoding').selectedIndex].value;
+   if (box.selectionStart != box.selectionEnd) {
+      text = box.value.substring(box.selectionStart,box.selectionEnd);
+   } else {
+      text = box.value;
+   }
+   switch(func) {
+      case 'fullWidth':
+         out = fullWidth(text);
+         break
+      case 'deFullWidth':
+         out = deFullWidth(text);
+         break;
+      case 'circled':
+         out = circled(text);
+         break;
+      case 'decircled':
+         out = decircled(text);
+         break;
+      case 'fucked':
+         out = fucked(text);
+         break;
+      case 'frittata':
+         out = frittata(text);
+         break;
+      case 'eURI':
+         out = encodeURI(text);
+         break;
+      case 'eURIc':
+         out = encodeURIComponent(text);
+         break;
+      case 'dURI':
+         out = dURI(text);
+         break;
+      case 'QWERTY':
+         out = qwerty2dvorak(text);
+         break;
+      case 'DVORAK':
+         out = dvorak2qwerty(text);
+         break;
+      case 'AZC0':
+         out = az2count0(text);
+         break;
+      case 'AZC1':
+         out = az2count1(text);
+         break;
+      case 'ROT13':
+         out = ROT13(text);
+         break;
+      case 'CShift':
+         var lsel = document.getElementById('CShiftLen');
+         var len = parseInt(lsel.options[lsel.selectedIndex].value,10);
+         out = CShift(text,len);
+         break;
+      case 'HEX':
+         if (utf8 == '0') {
+            out = HEX(text,false);
+         } else if (utf8 == '1') {
+            out = HEX(utf8str(text),false);
+         } else if (utf8 == '2') {
+            out = HEX(ucs2be(text),false);
+         } else if (utf8 == '3') {
+            out = HEX(ucs2le(text),false);
+         } else if (utf8 == '4') {
+            out = HEX(lowbytes(text),false);
+         }
+         break;
+      case 'HEXsp':
+         if (utf8 == '0') {
+            out = HEX(text,true);
+         } else if (utf8 == '1') {
+            out = HEX(utf8str(text),true);
+         } else if (utf8 == '2') {
+            out = HEX(ucs2be(text),true);
+         } else if (utf8 == '3') {
+            out = HEX(ucs2le(text),true);
+         } else if (utf8 == '4') {
+            out = HEX(lowbytes(text),true);
+         }
+         break;
+      case 'deHEX':
+         if (utf8 == '1') {
+            out = deutf8str(deHEX(text));
+         } else if (utf8 == '2') {
+            out = deucs2be(deHEX(text));
+         } else if (utf8 == '3') {
+            out = deucs2le(deHEX(text));
+         } else {
+            out = deHEX(text);
+         }
+         break;
+      case 'BIN':
+         if (utf8 == '0') {
+            out = BIN(text,false);
+         } else if (utf8 == '1') {
+            out = BIN(utf8str(text),false);
+         } else if (utf8 == '2') {
+            out = BIN(ucs2be(text),false);
+         } else if (utf8 == '3') {
+            out = BIN(ucs2le(text),false);
+         } else if (utf8 == '4') {
+            out = BIN(lowbytes(text),false);
+         }
+         break;
+      case 'BINsp':
+         if (utf8 == '0') {
+            out = BIN(text,true);
+         } else if (utf8 == '1') {
+            out = BIN(utf8str(text),true);
+         } else if (utf8 == '2') {
+            out = BIN(ucs2be(text),true);
+         } else if (utf8 == '3') {
+            out = BIN(ucs2le(text),true);
+         } else if (utf8 == '4') {
+            out = BIN(lowbytes(text),true);
+         }
+         break;
+      case 'deBIN':
+         if (utf8 == '1') {
+            out = deutf8str(deBIN(text));
+         } else if (utf8 == '2') {
+            out = deucs2be(deBIN(text));
+         } else if (utf8 == '3') {
+            out = deucs2le(deBIN(text));
+         } else {
+            out = deBIN(text);
+         }
+         break;
+      case 'encodeBase64':
+         var alpha = document.getElementById('Alpha64').value;
+         var lsel = document.getElementById('Length64');
+         var len = lsel.options[lsel.selectedIndex].value;
+         if (utf8 == '0') {
+            out = encodeBase64(text,alpha,len);
+         } else if (utf8 == '1') {
+            out = encodeBase64(utf8str(text),alpha,len);
+         } else if (utf8 == '2') {
+            out = encodeBase64(ucs2be(text),alpha,len);
+         } else if (utf8 == '3') {
+            out = encodeBase64(ucs2le(text),alpha,len);
+         } else if (utf8 == '4') {
+            out = encodeBase64(lowbytes(text),alpha,len);
+         }
+         break;
+      case 'decodeBase64':
+         var alpha = document.getElementById('Alpha64').value;
+         if (utf8 == '1') {
+            out = deutf8str(decodeBase64(text,alpha));
+         } else if (utf8 == '2') {
+            out = deucs2be(decodeBase64(text,alpha));
+         } else if (utf8 == '3') {
+            out = deucs2le(decodeBase64(text,alpha));
+         } else {
+            out = decodeBase64(text,alpha);
+         }
+         break;
+      case 'Reverse':
+         out = Reverse(text);
+         break;
+      case 'uc':
+         out = text.toUpperCase();
+         break;
+      case 'lc':
+         out = text.toLowerCase();
+         break;
+      case 'morse':
+         out = morse(text);
+         break;
+      case 'demorse':
+         out = demorse(text);
+         break;
+      case 'radio':
+         out = radio(text);
+         break;
+      case 'toUTF8':
+         out = utf8str(text);
+         break;
+      case 'toUCS2':
+         out = ucs2be(text);
+         break;
+      case 'toUCS2le':
+         out = ucs2le(text);
+         break;
+      case 'fromUTF8':
+         out = deutf8str(text);
+         break;
+      case 'fromUCS2':
+         out = deucs2be(text);
+         break;
+      case 'fromUCS2le':
+         out = deucs2le(text);
+         break;
+      case 'transR2E':
+         out = transR2E(text);
+         break;
+      case 'transK2E':
+         out = transK2E(text);
+         break;
+      case 'Custom':
+         var instr = text;
+         var outstr = '';
+         eval(document.getElementById('EvalMunge').value);
+         out = outstr;
+         break;
+      case 'DefaultText':
+         out = document.getElementById('DefText').options[document.getElementById('DefText').selectedIndex].value;
+         break;
+      case 'SuperHero':
+         out = SuperHero();
+         break;
+      case 'anagram':
+         out = anagram(text,document.getElementById('AnaMax').value);
+         break;
+      case 'banner':
+         out = banner(text);
+         break;
+   }
+   if (box.selectionStart != box.selectionEnd) {
+      var selOffset = out.length - text.length;
+      text = box.value.substring(0,box.selectionStart) + out + box.value.substring(box.selectionEnd,box.length);
+      box.value = text;
+      box.selectionEnd += selOffset;
+   } else {
+      box.value = out;
+   }
+   showInfo();
+}
+
+function showInfo() {
+   var asc = 0;
+   var ext = 0;
+   var uni = 0;
+   var bstat = '';
+   var sstat = '';
+   box = document.getElementById('mungeBox');
+   stat = document.getElementById('statBox');
+   for (var i = 0; i < box.value.length; i++) {
+      var j = box.value.charCodeAt(i);
+      if (j >= 0) asc = 1;
+      if (j >= 128) ext = 1;
+      if (j >= 256) uni = 1;
+   }
+   if (uni) {
+      bstat="Text Type: 16bit Unicode -- Char Count: "+box.value.length+' / UTF8 Bytes: '+utf8str(box.value).length;
+   } else if (ext) {
+      bstat="Text Type: 8bit Ext. ASCII/octet-stream -- Bytes: "+box.value.length+' / UTF8 Bytes: '+utf8str(box.value).length;
+   } else if (asc) {
+      bstat="Text Type: 7bit ASCII -- Bytes: "+box.value.length;
+   } else {
+      bstat="Text Type: None";
+   }
+   if (box.selectionStart == box.selectionEnd) {
+      sstat = 'Selection: None';
+   } else if (box.selectionEnd - box.selectionStart == 1) {
+      var y = box.value.charAt(box.selectionStart);
+      var z = box.value.charCodeAt(box.selectionStart);
+      sstat = 'Selection: "'+y+'" (Char Code: '+z+' / '+HEX(y,false)+'h / '+BIN(y,false)+'b)';
+   } else {
+      sstat = 'Selection: StarPos: '+box.selectionStart+' EndPos: '+box.selectionEnd+' Length: '+(box.selectionEnd-box.selectionStart);
+   }
+   stat.value = bstat + "\n" + sstat;
+}
+      
+      </script>
+      <style>
+      body {font-family:sans-serif;}
+      div { border:1px solid #aaa; padding:5px; }
+      #mungeBox { background-color: #000; color: #fff; }
+      #EvalMunge { background-color: #000; color: #7f7; }
+      #statBox { background-color: #ccc; }
+      #left { padding:0; border:0; width: 680px; float:left; margin:0; margin-right:10px; }
+      #right { padding:0; border:0; margin:0; width: 520px; float:left; }
+      #Alpha64 { width: 490px; }
+      .shead { font-weight: bold; }
+      </style>
+   </head>
+   <body onload="showInfo();">
+     <div id="left">
+      <div>
+        <span class="shead">Text Box:</span><br/>
+        <textarea rows="24" cols="80" id="mungeBox" onchange="showInfo();" onkeyup="showInfo();" onselect="showInfo();" onmouseup="showInfo();">Hello World.</textarea><br/>
+         <textarea rows="2" cols="80" id="statBox" readonly="readonly">Text Type: None
+Selection: None</textarea><br/>
+    
+</div><br/><div><span class="shead">Custom Javascript:</span>
+         <button onclick="mungeIt('Custom');">Run Custom Code</button><br/>
+         <textarea id="EvalMunge" rows="10" cols="80">
+// The variable "instr" is a string with the content in it from the Text Box
+// or from a selection within the Text Box.
+// That text will be replaced with whatever is in the variable "outstr" after
+// this code is run.
+
+// Example 1:  Invert the alphabet: A=Z, B=Y, C=X, ... x=c, y=b, z=a
+for (var i = 0; i < instr.length; i++) {
+  var c = instr.charCodeAt(i);
+  if (c > 64 && c < 91) {
+    c = 65 + (25 - (c - 65));
+    outstr += String.fromCharCode(c);
+  } else if (c > 96 && c < 123) {
+    c = 97 + (25 - (c - 97));
+    outstr += String.fromCharCode(c);
+  } else {
+    outstr += instr.charAt(i);
+  }
+}
+
+// Example 2: Convert Non-ASCII (and other) characters to HTML Entities:
+/* for (var i = 0; i &lt; instr.length; i++) {
+ *   var c = instr.charCodeAt(i);
+ *   if (c == 38) {
+ *     outstr += '&amp;amp;'; continue;
+ *   } 
+ *   if (c == 60) {
+ *     outstr += '&amp;lt;'; continue;
+ *   } 
+ *   if (c == 62) {
+ *     outstr += '&amp;gt;'; continue;
+ *   } 
+ *   if (c &gt; 31 &amp;&amp; c &lt; 128) {
+ *     outstr += instr.charAt(i); 
+ *   } else {
+ *     outstr += '&amp;#' + c.toString() + ';';
+ *   }
+ * }
+ */</textarea><br/>
+      </div>
+   </div><div id="right">
+   <div><span class="shead">ASCII Mungers:</span><br/>
+         <button onclick="mungeIt('uc');">Upper Case</button>
+         <button onclick="mungeIt('lc');">Lower Case</button>
+         <button onclick="mungeIt('Reverse');">Reverse</button>
+         <button onclick="mungeIt('morse');;">Morse Code</button>
+         <button onclick="mungeIt('demorse');;">Morse to ASCII</button>
+         <button onclick="mungeIt('radio');;">Spelling Alphabet</button>
+         <button onclick="mungeIt('frittata');">Youtube Speak</button>
+         <button onclick="mungeIt('ROT13');;">ROT13</button>
+         <button onclick="mungeIt('CShift');;">Caesarian Shift</button>
+         <select id="CShiftLen">
+            <option value="-12">-12</option>
+            <option value="-11">-11</option>
+            <option value="-10">-10</option>
+            <option value="-9">-9</option>
+            <option value="-8">-8</option>
+            <option value="-7">-7</option>
+            <option value="-6">-6</option>
+            <option value="-5">-5</option>
+            <option value="-4">-4</option>
+            <option value="-3">-3</option>
+            <option value="-2">-2</option>
+            <option value="-1">-1</option>
+            <option value="1" selected>+1</option>
+            <option value="2">+2</option>
+            <option value="3">+3</option>
+            <option value="4">+4</option>
+            <option value="5">+5</option>
+            <option value="6">+6</option>
+            <option value="7">+7</option>
+            <option value="8">+8</option>
+            <option value="9">+9</option>
+            <option value="10">+10</option>
+            <option value="11">+11</option>
+            <option value="12">+12</option>
+         </select>
+         <button onclick="mungeIt('QWERTY');">QWERTY to Dvorak</button>
+         <button onclick="mungeIt('DVORAK');">Dvorak to QWERTY</button>
+         <button onclick="mungeIt('AZC1');">A-Z to 01-26</button>
+         <button onclick="mungeIt('AZC0');">A-Z to 00-25</button>
+   </div><br/><div><span class="shead">ASCII to/from Unicode Mungers:</span><br/> 
+         <button onclick="mungeIt('fullWidth');">Full Width</button>
+         <button onclick="mungeIt('deFullWidth');">de-Full Width</button>
+         <button onclick="mungeIt('circled');">Circled</button>
+         <button onclick="mungeIt('decircled');">de-Circled</button>
+         <button onclick="mungeIt('fucked');">K-Rad Modern</button>
+         <button onclick="mungeIt('banner');">Banner</button>
+   </div><br/><div><span class="shead">Unicode to ASCII Transliteration:</span><br/> 
+         <button onclick="mungeIt('transR2E');">Russian to "English"</button>
+         <button onclick="mungeIt('transK2E');">Hiragana/Katakana to Romaji</button>
+         <!-- Greek Transliteration -->
+   </div><br/><div><span class="shead">Encoders/Decoders:</span><br/>
+         <button onclick="mungeIt('eURI');">URI Encode</button> / 
+         <button onclick="mungeIt('eURIc');">URI Encode (Component)</button> / 
+         <button onclick="mungeIt('dURI');">URI Decode</button><br>
+         Base2:
+         <button onclick="mungeIt('BIN');">Binary</button> /
+         <button onclick="mungeIt('BINsp');">Binary (Spaces)</button> /
+         <button onclick="mungeIt('deBIN');">Binary to String</button><br/>
+         Base16:
+         <button onclick="mungeIt('HEX');">Hexadecimal</button> /
+         <button onclick="mungeIt('HEXsp');">Hexadecimal (Spaces)</button> /
+         <button onclick="mungeIt('deHEX');">Hex to String</button><br/>
+         <div><b>Base64:</b> 
+            <button onclick="mungeIt('encodeBase64');">Encode</button> / 
+            <button onclick="mungeIt('decodeBase64');">Decode</button>
+            Max Line Length: <select id="Length64">
+               <option value="0">Infinite</option>
+               <option value="76">76 (MIME)</option>
+               <option value="64">64 (PEM/BinHex)</option>
+            </select>
+            <br/>
+            Base64 Alphabet: 
+            <select onChange="document.getElementById('Alpha64').value = this.options[this.selectedIndex].value">
+               <option value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=">Standard PEM/MIME</option>
+               <option value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/">Standard (No Padding)</option>
+               <option value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_">RFC 4648</option>
+               <option value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-">XML Name Tokens</option>
+               <option value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_:">XML Identifiers</option>
+               <option value="!&quot;#$%&amp;'()*+,-012345689@ABCDEFGHIJKLMNPQRSTUVXYZ[`abcdefhijklmpqr:">BinHex</option>
+               <option value=" !&quot;#$%&amp;'()*+,-./0123456789:;&lt;=&gt;?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\]^_">uuencode</option>
+            </select>               
+            <input type="text" id="Alpha64" value="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=" />
+         </div>
+   </div><br/><div><span class="shead">Charset Conversion:</span><br/>
+         Automatic (used by the Encoders): <select id="Encoding">
+            <option value="0">None (use with care)</option> 
+            <option selected="selected" value="1">UTF-8</option> 
+            <option value="2">UCS-2</option> 
+            <option value="3">UCS-2 (Little Endian)</option> 
+            <option value="4">Strip high bits</option> 
+         </select><br/>
+         Manual: 
+         <button onclick="mungeIt('toUTF8');">To UTF-8</button>
+         <button onclick="mungeIt('fromUTF8');">From UTF-8</button>
+         <button onclick="mungeIt('toUCS2');">To UCS-2</button>
+         <button onclick="mungeIt('fromUCS2');">From UCS-2</button>
+         <button onclick="mungeIt('toUCS2le');">To UCS-2 (LE)</button>
+         <button onclick="mungeIt('fromUCS2le');">From UCS-2 (LE)</button>
+   </div><br/><div><span class="shead">Text Generators:</span><br/>
+         <button onclick="mungeIt('DefaultText');">Default Text / Pangrams</button>
+         <select id="DefText">
+           <option value="Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.">Lorem Ipsum</option>
+         <option value="I wish the Internet's teenagers would learn how to type because I really hate those illiterate little punks.&#10;&#10;I seriously want to grab them by their shoulders and shake them while screaming, &quot;Why are you so fucking dumb?!  You're only getting $7 worth of that $200 gaming keyboard because you refuse to use more than 12 keys!&quot;&#10;&#10;Then I would (just for giggles) use their own hands to slap them in their faces and repeatedly ask them, &quot;Why are you hitting yourself?&quot;  After all, if they want to behave like little girls, then I'll tease them as such.&#10;&#10;I'm not angry, I just don't want to read anymore YouTube comments from these juveniles.  The Internet really needs my mom to smack some sense into its kids.">Youtube Test</option>
+           <option value="The quick brown fox jumps over the lazy dog.">Quick Brown Fox (en)</option>
+           <option value="Victor jagt zw&#246;lf Boxk&#228;mpfer quer &#252;ber den gro&#223;en Sylter Deich.">Victor Chases (de)</option>
+           <option value="Portez ce vieux whisky au juge blond qui fume.">Old Wiskey (fr)</option>
+           <option value="El veloz murci&#233;lago hind&#250; com&#237;a feliz cardillo y kiwi. La cig&#252;e&#241;a tocaba el saxof&#243;n detr&#225;s del palenque de paja.">Quick Hindu Bat (es)</option>
+           <option value="&#1057;&#1098;&#1077;&#1096;&#1100; &#1078;&#1077; &#1077;&#1097;&#1105; &#1101;&#1090;&#1080;&#1093; &#1084;&#1103;&#1075;&#1082;&#1080;&#1093; &#1092;&#1088;&#1072;&#1085;&#1094;&#1091;&#1079;&#1089;&#1082;&#1080;&#1093; &#1073;&#1091;&#1083;&#1086;&#1082;, &#1076;&#1072; &#1074;&#1099;&#1087;&#1077;&#1081; &#1095;&#1072;&#1102;.">Eat more (ru)</option>
+           <option value="&#12356;&#12429;&#12399;&#12395;&#12411;&#12408;&#12392;&#10;&#12385;&#12426;&#12396;&#12427;&#12434;&#10;&#12431;&#12363;&#12424;&#12383;&#12428;&#12381;&#10;&#12388;&#12397;&#12394;&#12425;&#12416;&#10;&#12358;&#12432;&#12398;&#12362;&#12367;&#12420;&#12414;&#10;&#12369;&#12405;&#12371;&#12360;&#12390;&#10;&#12354;&#12373;&#12365;&#12422;&#12417;&#12415;&#12375;&#10;&#12433;&#12402;&#12418;&#12379;&#12377;">Iroha (hiragana) (ja)</option>
+           <option value="&#12354;&#12417; &#12388;&#12385; &#12411;&#12375; &#12381;&#12425;&#10;&#12420;&#12414; &#12363;&#12399; &#12415;&#12397; &#12383;&#12395;&#10;&#12367;&#12418; &#12365;&#12426; &#12416;&#12429; &#12371;&#12369;&#10;&#12402;&#12392; &#12356;&#12396; &#12358;&#12408; &#12377;&#12433;&#10;&#12422;&#12431; &#12373;&#12427; &#12362;&#12405;&#12379;&#12424;&#10;&#12360;&#12398;&#26525;&#12434; &#12394;&#12428;&#12432;&#12390;">Ametsuchi no Uta (ja)</option>
+           <option value="&#932;&#940;&#967;&#953;&#963;&#964;&#951; &#945;&#955;&#974;&#960;&#951;&#958; &#946;&#945;&#966;&#942;&#962; &#968;&#951;&#956;&#941;&#957;&#951; &#947;&#951;, &#948;&#961;&#945;&#963;&#954;&#949;&#955;&#943;&#950;&#949;&#953; &#965;&#960;&#941;&#961; &#957;&#969;&#952;&#961;&#959;&#973; &#954;&#965;&#957;&#972;&#962;.">My big, fat Greek Fox (el)</option>
+           <option value="&#1500;&#1499;&#1503; &#1495;&#1499;&#1493; &#1500;&#1497; &#1504;&#1488;&#1501; &#1497;&#1492;&#1493;&#1492; &#1500;&#1497;&#1493;&#1501; &#1511;&#1493;&#1502;&#1497; &#1500;&#1506;&#1491;, &#1499;&#1497; &#1502;&#1513;&#1508;&#1496;&#1497; &#1500;&#1488;&#1505;&#1507; &#1490;&#1493;&#1497;&#1501; &#1500;&#1511;&#1489;&#1510;&#1497; &#1502;&#1502;&#1500;&#1499;&#1493;&#1514;, &#1500;&#1513;&#1508;&#1498; &#1506;&#1500;&#1497;&#1492;&#1501; &#1494;&#1506;&#1502;&#1497; &#1499;&#1500; &#1495;&#1512;&#1493;&#1503; &#1488;&#1508;&#1497;, &#1499;&#1497; &#1489;&#1488;&#1513; &#1511;&#1504;&#1488;&#1514;&#1497; &#1514;&#1488;&#1499;&#1500; &#1499;&#1500; &#1492;&#1488;&#1512;&#1509;">Zephaniah 3:8 (he)</option>
+           <option value="&#266;uai&#289; b&#233; &#7745;&#243;rsh&#225;&#267; le dl&#250;&#7787;sp&#225;d f&#237;or&#7711;inn tr&#237; hata mo &#7691;ea-&#7767;orc&#225;in &#7683;ig.">Satisfied Woman (ga)</option>
+         <option value="&#53412;&#49828;&#51032; &#44256;&#50976;&#51312;&#44148;&#51008; &#51077;&#49696;&#45180;&#47532; &#47564;&#45208;&#50556; &#54616;&#44256; &#53945;&#48324;&#54620; &#44592;&#49696;&#51008; &#54596;&#50836;&#52824; &#50506;&#45796;.">Condition for a Kiss (ko)</option>
+         <option value="Je&#380;u kl&#261;tw, sp&#322;&#243;d&#378; Finom cz&#281;&#347;&#263; gry ha&#324;b!">Hedgehog of Spells (pl)</option>
+         <option value="Gud hj&#228;lpe Zorns m&#246; qvickt f&#229; byxa.">Zorn's Maiden (sv)</option>
+         <option value="&#3609;&#3634;&#3618;&#3626;&#3633;&#3591;&#3590;&#3616;&#3633;&#3603;&#3601;&#3660; &#3648;&#3630;&#3591;&#3614;&#3636;&#3607;&#3633;&#3585;&#3625;&#3660;&#3613;&#3633;&#3656;&#3591; &#3612;&#3641;&#3657;&#3648;&#3602;&#3656;&#3634;&#3595;&#3638;&#3656;&#3591;&#3617;&#3637;&#3629;&#3634;&#3594;&#3637;&#3614;&#3648;&#3611;&#3655;&#3609;&#3589;&#3609;&#3586;&#3634;&#3618;&#3587;&#3623;&#3604; &#3606;&#3641;&#3585;&#3605;&#3635;&#3619;&#3623;&#3592;&#3611;&#3599;&#3636;&#3610;&#3633;&#3605;&#3636;&#3585;&#3634;&#3619;&#3592;&#3633;&#3610;&#3615;&#3657;&#3629;&#3591;&#3624;&#3634;&#3621; &#3600;&#3634;&#3609;&#3621;&#3633;&#3585;&#3609;&#3634;&#3628;&#3636;&#3585;&#3634;&#3588;&#3640;&#3603;&#3627;&#3597;&#3636;&#3591;&#3593;&#3633;&#3605;&#3619;&#3594;&#3598;&#3634; &#3596;&#3634;&#3609;&#3626;&#3617;&#3634;&#3608;&#3636;">Mr. Sangkapan (th)</option>
+       </select><br/>
+       <button onclick="mungeIt('SuperHero');">Random SuperHero</button>
+   </div><br/><div><span class="shead">Other:</span><br/>
+         <button onclick="mungeIt('anagram');">Generate Anagrams</button>
+         Limit # of Anagrams to: <input id="AnaMax" type="number" size="5" value="100"/>
+   </div>
+      </div>
+    </body>
+</html>
