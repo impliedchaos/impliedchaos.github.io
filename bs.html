@@ -202,14 +202,29 @@ function additup() {
         ADD[j] += g[j];
       }
    }
+   var max = 0;
+   var min = 100;
+   for (var i = 0; i < X*Y; i++) {
+     if (BSA[i] == 0 && ADD[i]) {
+       if (ADD[i] > max) { max = ADD[i]; }
+       if (ADD[i] < min) { min = ADD[i]; }
+     }
+   }
    for (var i = 0; i < X*Y; i++) {
      if (BSA[i] == 0) {
        var cell = document.getElementById('ebsc' + i.toString());
        if (ADD[i] == 0) {
             cell.innerHTML = "&nbsp;"
+            cell.style.backgroundColor = "#fff";
        } else {
+            var z = Math.floor(255 - ((ADD[i] - min) * (128 / (max - min))));
             cell.innerHTML = ADD[i];
+            cell.style.backgroundColor = "rgb("+z+","+z+",255)";
        }
+     } else if (BSA[i] == 1) {
+       document.getElementById('ebsc' + i.toString()).style.backgroundColor = "#8f8";
+     } else {
+       document.getElementById('ebsc' + i.toString()).style.backgroundColor = "#f88";
      }
    }
    document.getElementById('formations').innerHTML = "Possible Formations ("+list.length+"): " + list.join(', ');
