@@ -5,13 +5,18 @@
 <link rel="icon" type="image/png" href="/img/favicon.png" />
 <link href='http://fonts.googleapis.com/css?family=Boogaloo' rel='stylesheet' type='text/css' />
 <style>
-body {background: #ddd; color: #222; font-family: 'Boogaloo', cursive; font-size: larger;}
+div { margin: 0px; }
+html, body {background: #ddd; color: #222; font-family: 'Boogaloo', cursive; font-size: larger; height:100%;}
 a { text-decoration: none;  color: #222; }
 a:hover { font-weight: bold; color : #000; }
 a:visited { color: #444; }
+#footer, .push { font-size:16px; height:20px; }
+#wrapper { min-height:100%; margin: 0 auto -20px; }
 </style>
 </head>
 <body>
+<div id="wrapper">
+<div id="content">
 <h1>HTML/JavaScript Projects and Experiments</h1>
 <ul>
   <li><a href="mungeutf8.html">UTF-8 Text Munger</a></li>
@@ -19,5 +24,11 @@ a:visited { color: #444; }
   <li><a href="secquest/">Security Question Answer Generator</a></li>
   <li><a href="dumbsound/?b=400&s=45403c3934302d2824211c1815100c09&p=000000000000e00000001c0000000380000000700000000e0000000000000000">Annoying sound thing</a></li>
 </ul>
+</div>
+<div class="push"></div>
+</div>
+<div id="footer">
+  <a href="http://www.twitter.com/impliedchaos">@impliedchaos</a>
+</div>
 </body>
 </html>
