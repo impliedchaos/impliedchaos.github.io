@@ -210,6 +210,7 @@ function additup() {
        if (ADD[i] < min) { min = ADD[i]; }
      }
    }
+   if (max == min) { --min; }
    for (var i = 0; i < X*Y; i++) {
      if (BSA[i] == 0) {
        var cell = document.getElementById('ebsc' + i.toString());
