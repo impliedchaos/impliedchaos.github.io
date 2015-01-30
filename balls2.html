@@ -32,9 +32,9 @@ function Ball() {
 
 var canvas, canvas2, context, image, data, context2;
 var balls = [];
-var WIDTH = 800;
-var HEIGHT = 800;
-var BALLCOUNT = 50;
+var WIDTH = 300;
+var HEIGHT = 300;
+var BALLCOUNT = 3;
  
 init();
 setInterval(loop, 1000 / 60);
@@ -68,8 +68,8 @@ function init() {
     balls[i].y = Math.random() * HEIGHT;
     balls[i].sx = Math.random() * 10 - 5;
     balls[i].sy = Math.random() * 10 - 5;
-    balls[i].size = Math.random() * 30 + 10;
-    balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.75)";
+    balls[i].size = 30;
+    balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.5)";
   }
   document.getElementById('ilabel').innerHTML = energy();
 }
@@ -135,20 +135,15 @@ function loop() {
     balls[i].y += balls[i].sy;
     context2.fillStyle=balls[i].color;
     context2.beginPath();
-    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size,0,Math.PI*2,true);
+    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size/3,0,Math.PI*2,true);
     context2.fill();
-    /*
-    context2.beginPath();
-    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size*2/3,0,Math.PI*2,true);
-    context2.fill();
-    for (var j = 1; j < 6; j++) {
+    for (var j = 1; j < 12; j++) {
       context2.strokeStyle = balls[i].color;
-      context2.lineWidth = balls[i].size/(j*4);
+      context2.lineWidth = balls[i].size/2;
       context2.beginPath();
-      context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size*j*2,0,Math.PI*2,true);
+      context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size*j,0,Math.PI*2,true);
       context2.stroke();
     }
-    */
   }
 
 //             var dURL = canvas.toDataURL();
