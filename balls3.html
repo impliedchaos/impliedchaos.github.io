@@ -20,14 +20,55 @@
         Current Momentum: <span id="clabel"></span><br/>
 		<script type="text/javascript"> 
 
+function Vector2D() {
+  this.x = 0;
+  this.y = 0;
+  this.add = function(vect) {
+    var a = new Vector2D();
+    a.x = this.x + vect.x;
+    a.y = this.y + vect.y;
+    return a;
+  }
+  this.sub = function(vect) {
+    var s = new Vector2D();
+    s.x = this.x - vect.x;
+    s.y = this.y - vect.y;
+    return s;
+  }
+  this.magnitude = function() {
+    return(Math.sqrt(this.x*this.x+this.y*this.y));
+  }
+  this.normalize = function() {
+    var norm = new Vector2d();
+    if (this.magnitude() > 0) {
+      norm.x = this.x/this.magnitude();
+      norm.y = this.y/this.magnitude();
+    }
+    return(norm);
+  }
+  this.mul = function(fac) {
+    var m = new Vector2D();
+    m.x = this.x * fac;
+    m.y = this.y * fac;
+    return m;
+  }
+  this.dot = function(vect) {
+    return(this.x*vect.x+this.y*vect.y);
+  }
+}
+
 function Ball() {
   this.x = 0;
   this.y = 0;
-  this.sx = 0;
-  this.sy = 0;
+  this.velocity = new Vector2D();
   this.size = 10;
-  this.mass = 10;
   this.color = "rgba(255,255,255,0.5)";
+  this.mass = function() {
+    return(this.size*Math.PI*Math.PI);
+  }
+  this.p = function() {
+    return(this.velocity.magnitude() * this.mass());
+  }
 }
 
 var canvas, canvas2, context, image, data, context2;
@@ -66,8 +107,8 @@ function init() {
     balls[i] = new Ball();
     balls[i].x = Math.random() * WIDTH;
     balls[i].y = Math.random() * HEIGHT;
-    balls[i].sx = Math.random() * 10 - 5;
-    balls[i].sy = Math.random() * 10 - 5;
+    balls[i].velocity.x = Math.random() * 10 - 5;
+    balls[i].velocity.y = Math.random() * 10 - 5;
     balls[i].size = Math.random() * 30 + 10;
     balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.75)";
   }
@@ -81,13 +122,13 @@ function loop() {
 
   // Boundary collision
   for (var i = 0; i < balls.length; i++) {
-    if (((balls[i].x - balls[i].size < 0) && (balls[i].sx < 0)) ||
-        ((balls[i].x + balls[i].size > WIDTH) && balls[i].sx > 0)) {
-      balls[i].sx *= -1;
+    if (((balls[i].x - balls[i].size < 0) && (balls[i].velocity.x < 0)) ||
+        ((balls[i].x + balls[i].size > WIDTH) && balls[i].velocity.x > 0)) {
+      balls[i].velocity.x *= -1;
     }
-    if (((balls[i].y - balls[i].size < 0) && (balls[i].sy < 0)) ||
-        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].sy > 0)) {
-      balls[i].sy *= -1;
+    if (((balls[i].y - balls[i].size < 0) && (balls[i].velocity.y < 0)) ||
+        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].velocity.y > 0)) {
+      balls[i].velocity.y *= -1;
     }
   }
   
@@ -96,6 +137,28 @@ function loop() {
     for (var j = i + 1; j < balls.length; j++) {
       if ((Math.pow(balls[i].x - balls[j].x,2) + Math.pow(balls[i].y - balls[j].y,2)) <= Math.pow(balls[i].size + balls[j].size,2)) {
         // Collision
+        var delta = new Vector2D();
+        delta.x = balls[i].x - balls[j].x;
+        delta.y = balls[i].y - balls[j].y;
+        var d = delta.magnitude();
+        var mtd = delta.mul((balls[i].size + balls[j].size - d) / d);
+        var im1 = balls[i].mass();
+        var im2 = balls[j].mass();
+        var v = balls[i].velocity.sub(balls[j].velocity);
+        var vn = v.dot(mtd.normalize);
+        
+        if (vn > 0) { continue; }
+
+        var z = (-2 * vn) / (im1 + im2);
+        var impulse = mtd.mul(z);
+        var v1 = balls[i].velocity.add(impulse.mul(im1));
+        var v2 = balls[j].velocity.sub(impulse.mul(im2));
+        balls[i].velocity = v1;
+        balls[j].velocity = v2;
+
+
+
+        /*
         var nx = balls[j].x - balls[i].x;
         var ny = balls[j].y - balls[i].y;
         var nc = Math.sqrt(nx*nx + ny*ny);
@@ -127,12 +190,13 @@ function loop() {
         balls[i].sy = (v1xy * ((m1 - m2) / (m1 + m2)) + (v2xy * ((2 * m2) / (m1 + m2)))) + v1yy;
         balls[j].sx = (v1xx * ((2 * m1) / (m1 + m2)) + (v2xx * ((m2 - m1) / (m1 + m2)))) + v2yx;
         balls[j].sy = (v1xy * ((2 * m1) / (m1 + m2)) + (v2xy * ((m2 - m1) / (m1 + m2)))) + v2yy;
+      */
       }
     }
   }
   for (var i = 0; i < balls.length; i++) {
-    balls[i].x += balls[i].sx;
-    balls[i].y += balls[i].sy;
+    balls[i].x += balls[i].velocity.x;
+    balls[i].y += balls[i].velocity.y;
     context2.fillStyle=balls[i].color;
     context2.beginPath();
     context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size,0,Math.PI*2,true);
@@ -161,8 +225,7 @@ function loop() {
 function energy() {
   var momentum = 0;
   for (var i = 0; i < balls.length; i++) {
-    var m = balls[i].size * Math.PI * Math.PI;
-    momentum += Math.sqrt(Math.pow(balls[i].sx*m,2)+Math.pow(balls[i].sy*m,2));
+    momentum += balls[i].p();
   }
   return momentum.toFixed(5);
 }
