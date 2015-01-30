@@ -3,7 +3,7 @@
     <head> 
 		<meta charset="utf-8"> 
         <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
-		<title>Sine Bobs!</title> 
+		<title>Elastic Balls</title> 
 		<style type="text/css"> 
 			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
 			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
@@ -20,55 +20,14 @@
         Current Momentum: <span id="clabel"></span><br/>
 		<script type="text/javascript"> 
 
-function Vector2D() {
-  this.x = 0;
-  this.y = 0;
-  this.add = function(vect) {
-    var a = new Vector2D();
-    a.x = this.x + vect.x;
-    a.y = this.y + vect.y;
-    return a;
-  }
-  this.sub = function(vect) {
-    var s = new Vector2D();
-    s.x = this.x - vect.x;
-    s.y = this.y - vect.y;
-    return s;
-  }
-  this.magnitude = function() {
-    return(Math.sqrt(this.x*this.x+this.y*this.y));
-  }
-  this.normalize = function() {
-    var norm = new Vector2d();
-    if (this.magnitude() > 0) {
-      norm.x = this.x/this.magnitude();
-      norm.y = this.y/this.magnitude();
-    }
-    return(norm);
-  }
-  this.mul = function(fac) {
-    var m = new Vector2D();
-    m.x = this.x * fac;
-    m.y = this.y * fac;
-    return m;
-  }
-  this.dot = function(vect) {
-    return(this.x*vect.x+this.y*vect.y);
-  }
-}
-
 function Ball() {
   this.x = 0;
   this.y = 0;
-  this.velocity = new Vector2D();
+  this.sx = 0;
+  this.sy = 0;
   this.size = 10;
+  this.mass = 10;
   this.color = "rgba(255,255,255,0.5)";
-  this.mass = function() {
-    return(this.size*Math.PI*Math.PI);
-  }
-  this.p = function() {
-    return(this.velocity.magnitude() * this.mass());
-  }
 }
 
 var canvas, canvas2, context, image, data, context2;
@@ -107,8 +66,8 @@ function init() {
     balls[i] = new Ball();
     balls[i].x = Math.random() * WIDTH;
     balls[i].y = Math.random() * HEIGHT;
-    balls[i].velocity.x = Math.random() * 10 - 5;
-    balls[i].velocity.y = Math.random() * 10 - 5;
+    balls[i].sx = Math.random() * 10 - 5;
+    balls[i].sy = Math.random() * 10 - 5;
     balls[i].size = Math.random() * 30 + 10;
     balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.75)";
   }
@@ -122,102 +81,67 @@ function loop() {
 
   // Boundary collision
   for (var i = 0; i < balls.length; i++) {
-    if (((balls[i].x - balls[i].size < 0) && (balls[i].velocity.x < 0)) ||
-        ((balls[i].x + balls[i].size > WIDTH) && balls[i].velocity.x > 0)) {
-      balls[i].velocity.x *= -1;
+    if (((balls[i].x - balls[i].size < 0) && (balls[i].sx < 0)) ||
+        ((balls[i].x + balls[i].size > WIDTH) && balls[i].sx > 0)) {
+      balls[i].sx *= -1;
     }
-    if (((balls[i].y - balls[i].size < 0) && (balls[i].velocity.y < 0)) ||
-        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].velocity.y > 0)) {
-      balls[i].velocity.y *= -1;
+    if (((balls[i].y - balls[i].size < 0) && (balls[i].sy < 0)) ||
+        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].sy > 0)) {
+      balls[i].sy *= -1;
     }
   }
   
-  // Ball collision
+  // Ball collision --- Slowly steps through each pair of balls.
   for (var i = 0; i < balls.length - 1; i++) {
     for (var j = i + 1; j < balls.length; j++) {
       if ((Math.pow(balls[i].x - balls[j].x,2) + Math.pow(balls[i].y - balls[j].y,2)) <= Math.pow(balls[i].size + balls[j].size,2)) {
-        // Collision
-        var delta = new Vector2D();
-        delta.x = balls[i].x - balls[j].x;
-        delta.y = balls[i].y - balls[j].y;
-        var d = delta.magnitude();
-        var mtd = delta.mul((balls[i].size + balls[j].size - d) / d);
-        var im1 = balls[i].mass();
-        var im2 = balls[j].mass();
-        var v = balls[i].velocity.sub(balls[j].velocity);
-        var vn = v.dot(mtd.normalize);
-        
-        if (vn > 0) { continue; }
+        // Collision Detected
 
-        var z = (-2 * vn) / (im1 + im2);
-        var impulse = mtd.mul(z);
-        var v1 = balls[i].velocity.add(impulse.mul(im1));
-        var v2 = balls[j].velocity.sub(impulse.mul(im2));
-        balls[i].velocity = v1;
-        balls[j].velocity = v2;
+        // Determine Unit Normal Velocity.
+        var unx = balls[j].x - balls[i].x;
+        var uny = balls[j].y - balls[i].y;
+        var nc = Math.sqrt(unx*unx + uny*uny);
+        unx /= nc;
+        uny /= nc;
 
+        // Skip if they're already moving away from each other.
+        if ((balls[j].sx - balls[i].sx) * unx + (balls[j].sy - balls[i].sy) * uny > 0) { continue; }
 
+        // Unit Tangenital Velocity.
+        var utx = uny * -1;
+        var uty = unx;
 
-        /*
-        var nx = balls[j].x - balls[i].x;
-        var ny = balls[j].y - balls[i].y;
-        var nc = Math.sqrt(nx*nx + ny*ny);
-        nx /= nc;
-        ny /= nc;
+        var v1n = unx * balls[i].sx + uny * balls[i].sy;
+        var v1t = utx * balls[i].sx + uty * balls[i].sy;
+        var v2n = unx * balls[j].sx + uny * balls[j].sy;
+        var v2t = utx * balls[j].sx + uty * balls[j].sy;
 
-        // Skip if they're already moving away.
-        if ((balls[j].sx - balls[i].sx) * nx + (balls[j].sy - balls[i].sy) * ny > 0) { continue; }
-
+        // We're using the circle's area as the ball's mass.
         var m1 = balls[i].size * Math.PI * Math.PI;
         var m2 = balls[j].size * Math.PI * Math.PI;
 
-        var x1 = balls[i].sx * nx + balls[i].sy * ny;
-        var v1xx = nx * x1;
-        var v1xy = ny * x1;
-        var v1yx = balls[i].sx - v1xx;
-        var v1yy = balls[i].sy - v1xy;
+        var vv1n = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
+        var vv2n = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
 
-        nx *= -1;
-        ny *= -1;
-
-        var x2 = balls[j].sx * nx + balls[j].sy * ny;
-        var v2xx = nx * x2;
-        var v2xy = ny * x2;
-        var v2yx = balls[j].sx - v2xx;
-        var v2yy = balls[j].sy - v2xy;
-
-        balls[i].sx = (v1xx * ((m1 - m2) / (m1 + m2)) + (v2xx * ((2 * m2) / (m1 + m2)))) + v1yx;
-        balls[i].sy = (v1xy * ((m1 - m2) / (m1 + m2)) + (v2xy * ((2 * m2) / (m1 + m2)))) + v1yy;
-        balls[j].sx = (v1xx * ((2 * m1) / (m1 + m2)) + (v2xx * ((m2 - m1) / (m1 + m2)))) + v2yx;
-        balls[j].sy = (v1xy * ((2 * m1) / (m1 + m2)) + (v2xy * ((m2 - m1) / (m1 + m2)))) + v2yy;
-      */
+        balls[i].sx = unx * vv1n + utx * v1t;
+        balls[i].sy = uny * vv1n + uty * v1t;
+        balls[j].sx = unx * vv2n + utx * v2t;
+        balls[j].sy = uny * vv2n + uty * v2t;
       }
     }
   }
+  // Draw the balls.
   for (var i = 0; i < balls.length; i++) {
-    balls[i].x += balls[i].velocity.x;
-    balls[i].y += balls[i].velocity.y;
+    balls[i].x += balls[i].sx;
+    balls[i].y += balls[i].sy;
     context2.fillStyle=balls[i].color;
     context2.beginPath();
     context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size,0,Math.PI*2,true);
     context2.fill();
-    /*
-    context2.beginPath();
-    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size*2/3,0,Math.PI*2,true);
-    context2.fill();
-    for (var j = 1; j < 6; j++) {
-      context2.strokeStyle = balls[i].color;
-      context2.lineWidth = balls[i].size/(j*4);
-      context2.beginPath();
-      context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size*j*2,0,Math.PI*2,true);
-      context2.stroke();
-    }
-    */
   }
 
-//             var dURL = canvas.toDataURL();
-//             document.getElementById("savestate").src = dURL;
-
+  // Page flip to the on-screen canvas.  Is page-flipping even necessary?
+  // Old frame buffer habits die hard.
   context.drawImage(canvas2,0,0,WIDTH,HEIGHT);
   document.getElementById('clabel').innerHTML = energy();
 }
@@ -225,10 +149,12 @@ function loop() {
 function energy() {
   var momentum = 0;
   for (var i = 0; i < balls.length; i++) {
-    momentum += balls[i].p();
+    var m = balls[i].size * Math.PI * Math.PI;
+    momentum += m * Math.sqrt(balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy);
   }
   return momentum.toFixed(5);
 }
+
 		</script> 
 	</body> 
 </html> 
