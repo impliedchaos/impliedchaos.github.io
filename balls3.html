@@ -117,8 +117,8 @@ function loop() {
         var v2t = utx * balls[j].sx + uty * balls[j].sy;
 
         // We're using the circle's area as the ball's mass.
-        var m1 = balls[i].size * Math.PI * Math.PI;
-        var m2 = balls[j].size * Math.PI * Math.PI;
+        var m1 = balls[i].size * balls[i].size * Math.PI;
+        var m2 = balls[j].size * balls[j].size * Math.PI;
 
         var vv1n = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
         var vv2n = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
@@ -149,7 +149,7 @@ function loop() {
 function energy() {
   var momentum = 0;
   for (var i = 0; i < balls.length; i++) {
-    var m = balls[i].size * Math.PI * Math.PI;
+    var m = balls[i].size * balls[i].size * Math.PI;
     momentum += m * Math.sqrt(balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy);
   }
   return momentum.toFixed(5);
