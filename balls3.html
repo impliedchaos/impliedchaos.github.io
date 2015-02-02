@@ -4,6 +4,7 @@
 		<meta charset="utf-8"> 
         <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
 		<title>Elastic Balls</title> 
+        <link rel="image_src" href="/img/balls3.png" />
 		<style type="text/css"> 
 			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
 			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
@@ -16,8 +17,8 @@
       <br/>
 		<div id="container"></div> 
         <div>
-        Initial Momentum: <span id="ilabel"></span><br/>
-        Current Momentum: <span id="clabel"></span><br/>
+        Initial Kinetic Energy: <span id="ilabel"></span><br/>
+        Current Kinetic Energy: <span id="clabel"></span><br/>
 		<script type="text/javascript"> 
 
 function Ball() {
@@ -66,9 +67,10 @@ function init() {
     balls[i] = new Ball();
     balls[i].x = Math.random() * WIDTH;
     balls[i].y = Math.random() * HEIGHT;
-    balls[i].sx = Math.random() * 10 - 5;
-    balls[i].sy = Math.random() * 10 - 5;
+    balls[i].sx = Math.random() * 4 - 2;
+    balls[i].sy = Math.random() * 4 - 2;
     balls[i].size = Math.random() * 30 + 10;
+    balls[i].y = HEIGHT - (balls[i].size - 10)*(HEIGHT/30);
     balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.75)";
   }
   document.getElementById('ilabel').innerHTML = energy();
@@ -147,12 +149,12 @@ function loop() {
 }
 
 function energy() {
-  var momentum = 0;
+  var ke = 0;
   for (var i = 0; i < balls.length; i++) {
     var m = balls[i].size * balls[i].size * Math.PI;
-    momentum += m * Math.sqrt(balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy);
+    ke += m / 2 * (balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy);
   }
-  return momentum.toFixed(5);
+  return ke;
 }
 
 		</script> 
