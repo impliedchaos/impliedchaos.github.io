@@ -1,0 +1,114 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Elastic Balls</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+        <script src="jslib/three.min.js"></script>
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+		<script type="text/javascript"> 
+
+
+var container;
+
+container = document.getElementById('container');
+
+    var scene, camera, renderer, pointLight;
+    var geometry, material, mesh;
+
+    init();
+    animate();
+
+    function init() {
+
+        scene = new THREE.Scene();
+
+        camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
+        camera.position.z = 1000;
+
+        geometry = new THREE.BoxGeometry( 600, 600, 600 );
+        material = new THREE.MeshPhongMaterial( { color: 0x7f7f7f,  } );
+
+        mesh = new THREE.Mesh( geometry, material );
+        mesh.position.z = -500;
+        scene.add( mesh );
+
+        pointLight = new THREE.PointLight(0xFFFFFF);
+        // set its position
+        pointLight.position.x = 0;
+        pointLight.position.y = 0;
+        pointLight.position.z = 1600;
+
+        // add to the scene
+//      scene.add(pointLight);
+
+        pl2 = new THREE.PointLight(0xff0000);
+        pl2.position.x = -1385.64;
+        pl2.position.y = -800;
+        pl2.position.z = 0;
+        scene.add(pl2);
+
+        pl5 = new THREE.PointLight(0x00ffff);
+        pl5.position.x = 1385.64;
+        pl5.position.y = 800;
+        pl5.position.z = 0;
+        scene.add(pl5);
+
+        pl3 = new THREE.PointLight(0x00ff00);
+        pl3.position.x = 1385.64;
+        pl3.position.y = -800;
+        pl3.position.z = 0;
+        scene.add(pl3);
+
+        pl6 = new THREE.PointLight(0xff00ff);
+        pl6.position.x = -1385.64;
+        pl6.position.y = 800;
+        pl6.position.z = 0;
+        scene.add(pl6);
+
+        pl4 = new THREE.PointLight(0x0000ff);
+        pl4.position.x = 0;
+        pl4.position.y = 1600;
+        pl4.position.z = 0;
+        scene.add(pl4);
+
+        pl7 = new THREE.PointLight(0xffff00);
+        pl7.position.x = 0;
+        pl7.position.y = -1600;
+        pl7.position.z = 0;
+        scene.add(pl7);
+
+        renderer = new THREE.WebGLRenderer();
+        renderer.setSize( window.innerWidth, window.innerHeight );
+
+        container.appendChild( renderer.domElement );
+
+    }
+
+    function animate() {
+
+        requestAnimationFrame( animate );
+
+        mesh.rotation.z -= 0.005;
+        mesh.rotation.x += 0.01;
+        mesh.rotation.y += 0.02;
+
+        renderer.render( scene, camera );
+
+    }
+
+		</script> 
+	</body> 
+</html> 
+
