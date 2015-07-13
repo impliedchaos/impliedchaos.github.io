@@ -1,0 +1,258 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Elastic Balls</title> 
+        <link rel="image_src" href="/img/balls3.png" />
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        <span id="label"></span><br/>
+		<script type="text/javascript"> 
+
+function Ball() {
+  this.x = 0;
+  this.y = 0;
+  this.sx = 0;
+  this.sy = 0;
+  this.size = 10;
+  this.mass = function() {
+    return(this.size*this.size*Math.PI);
+  }
+  this.r = 128;
+  this.g = 128;
+  this.b = 128;
+  this.a = 0.75;
+  this.color = function(r,g,b,a) {
+    if (r == 'x') {
+      return(this.r.toString(16)+this.g.toString(16)+this.b.toString(16));
+    } else if ( undefined != r) {
+      this.r = r;
+      this.g = g;
+      this.b = b;
+      if ( undefined != a) {
+        this.a = a;
+      }
+    } else {
+      return("rgba("+this.r+","+this.g+","+this.b+","+this.a+")");
+    }
+  }
+}
+
+var canvas, canvas2, context, image, data, context2;
+var balls = [];
+var WIDTH = 800;
+var HEIGHT = 800;
+var BALLCOUNT = 256;
+ 
+init();
+//setInterval(loop, 1000 / 60);
+
+function init() {
+  var container;
+
+  container = document.getElementById('container');
+ 
+  canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.style.width = WIDTH + "px";
+  canvas.style.height = HEIGHT + "px";
+  container.appendChild(canvas);
+ 
+  context = canvas.getContext("2d");
+  context.fillStyle = "rgb(0, 0, 0)";
+  context.fillRect (0, 0, WIDTH, HEIGHT);
+  image = context.getImageData(0, 0, WIDTH, HEIGHT);
+  data = image.data;
+
+  canvas2 = document.createElement("canvas");
+  canvas2.width = WIDTH;
+  canvas2.height = HEIGHT;
+  context2 = canvas2.getContext("2d");
+
+  for (var i = 0; i < BALLCOUNT; i++) {
+    balls[i] = new Ball();
+//    balls[i].x = Math.random() * WIDTH;
+//    balls[i].y = Math.random() * HEIGHT;
+    balls[i].x = (i % 16) * (WIDTH / 16) + 25 + i / 16;
+    balls[i].y = Math.floor(i / 16) * (HEIGHT / 16) + 25;
+//    balls[i].sx = Math.random() * 4 - 2;
+//    balls[i].sy = Math.random() * 4 - 2;
+    balls[i].sx = 2 * Math.pow(-1,Math.floor(Math.random()*2)+1);
+    balls[i].sy = 3;
+//    balls[i].size = Math.random() * 20 + 10;
+    balls[i].size = 20;
+//    if (Math.floor(Math.random()*2) == 0) { balls[i].color(127,127,127); } else { balls[i].color(255,255,255); }
+    if ((i % 2) == 0) { balls[i].color(127,127,127); } else { balls[i].color(255,255,255); }
+  }
+
+  canvas.addEventListener('click', function(event) {
+    for (var i = 0; i < balls.length; i++) {
+      var x = event.pageX - canvas.offsetLeft;
+      var y = event.pageY - canvas.offsetTop;
+      if (Math.sqrt(Math.pow(x - balls[i].x,2) + Math.pow(y - balls[i].y,2)) <= balls[i].size) {
+      /*
+        var r = Math.floor(Math.random()*3);
+        if (r == 2) {
+          balls[i].color(255,128,128);
+        } else if (r == 1) {
+          balls[i].color(128,255,128);
+        } else {
+          balls[i].color(128,128,255);
+        }
+        */
+      alert(balls[i].color('x'));
+      }
+    }
+  }, false);
+}
+ 
+function loop() {
+  // Clear the buffer;
+  context2.fillStyle="rgba(0,0,0,0.25)";
+  context2.fillRect(0,0,WIDTH,HEIGHT);
+
+  // Boundary collision
+  for (var i = 0; i < balls.length; i++) {
+    if (((balls[i].x - balls[i].size < 0) && (balls[i].sx < 0)) ||
+        ((balls[i].x + balls[i].size > WIDTH) && balls[i].sx > 0)) {
+      balls[i].sx *= -1;
+    }
+    if (((balls[i].y - balls[i].size < 0) && (balls[i].sy < 0)) ||
+        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].sy > 0)) {
+      balls[i].sy *= -1;
+    }
+  }
+  
+  // Ball collision --- Slowly steps through each pair of balls.
+  for (var i = 0; i < balls.length - 1; i++) {
+    for (var j = i + 1; j < balls.length; j++) {
+      if ((Math.pow(balls[i].x - balls[j].x,2) + Math.pow(balls[i].y - balls[j].y,2)) <= Math.pow(balls[i].size + balls[j].size,2)) {
+        // Collision Detected
+        var ri,rj;
+        if (balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy > balls[j].sx*balls[j].sx+balls[j].sy*balls[j].sy) {
+          ri = 10; rj = 20;
+        } else {
+          ri = 20; rj = 10;
+        }
+
+        // Determine Unit Normal Velocity.
+        var unx = balls[j].x - balls[i].x;
+        var uny = balls[j].y - balls[i].y;
+        var nc = Math.sqrt(unx*unx + uny*uny);
+        unx /= nc;
+        uny /= nc;
+
+        // Skip if they're already moving away from each other.
+        if ((balls[j].sx - balls[i].sx) * unx + (balls[j].sy - balls[i].sy) * uny > 0) { continue; }
+
+        // Unit Tangenital Velocity.
+        var utx = uny * -1;
+        var uty = unx;
+
+        var v1n = unx * balls[i].sx + uny * balls[i].sy;
+        var v1t = utx * balls[i].sx + uty * balls[i].sy;
+        var v2n = unx * balls[j].sx + uny * balls[j].sy;
+        var v2t = utx * balls[j].sx + uty * balls[j].sy;
+
+        // We're using the circle's area as the ball's mass.
+        var m1 = balls[i].mass();
+        var m2 = balls[j].mass();
+
+        var vv1n = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
+        var vv2n = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
+
+        balls[i].sx = unx * vv1n + utx * v1t;
+        balls[i].sy = uny * vv1n + uty * v1t;
+        balls[j].sx = unx * vv2n + utx * v2t;
+        balls[j].sy = uny * vv2n + uty * v2t;
+
+        /*
+        if (balls[i].r < balls[j].r) { ++balls[i].r; --balls[j].r; ++balls[i].g; --balls[j].b;} else if (balls[i].r > balls[j].r) { --balls[i].r; ++balls[j].r; --balls[i].g; ++balls[j].b;}
+        if (balls[i].g < balls[j].g) { ++balls[i].g; --balls[j].g; ++balls[i].b; --balls[j].r;} else if (balls[i].g > balls[j].g) { --balls[i].g; ++balls[j].g; --balls[i].b; ++balls[j].r;}
+        if (balls[i].b < balls[j].b) { ++balls[i].b; --balls[j].b; ++balls[i].r; --balls[j].g;} else if (balls[i].b > balls[j].b) { --balls[i].b; ++balls[j].b; --balls[i].r; ++balls[j].g;}
+*/
+        var r1 = balls[i].r;
+        var g1 = balls[i].g;
+        var b1 = balls[i].b;
+        var r2 = balls[j].r;
+        var g2 = balls[j].g;
+        var b2 = balls[j].b;
+        if (Math.floor(Math.random()*rj) == 0) { balls[i].r = r2; };
+        if (Math.floor(Math.random()*rj) == 0) { balls[i].g = g2; };
+        if (Math.floor(Math.random()*rj) == 0) { balls[i].b = b2; };
+        if (Math.floor(Math.random()*ri) == 0) { balls[j].r = r1; };
+        if (Math.floor(Math.random()*ri) == 0) { balls[j].g = g1; };
+        if (Math.floor(Math.random()*ri) == 0) { balls[j].b = b1; };
+
+      }
+    }
+  }
+  // Draw the balls.
+  for (var i = 0; i < balls.length; i++) {
+    balls[i].x += balls[i].sx;
+    balls[i].y += balls[i].sy;
+    context2.fillStyle=balls[i].color();
+    context2.fillStyle="rgba(255,255,255,1)";
+    context2.beginPath();
+    //context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size,0,Math.PI*2,true);
+    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),1,0,Math.PI*2,true);
+    context2.fill();
+  }
+
+  // Page flip to the on-screen canvas.  Is page-flipping even necessary?
+  // Old frame buffer habits die hard.
+  out();
+  context.drawImage(canvas2,0,0,WIDTH,HEIGHT);
+}
+
+function energy() {
+  var ke = 0;
+  for (var i = 0; i < balls.length; i++) {
+    var m = balls[i].mass();
+    ke += m / 2 * (balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy);
+  }
+  return ke;
+}
+
+function out() {
+  var r = g = b = c = m = y = k = w = 0;
+  for (var i = 0; i < balls.length; i++) {
+    switch(balls[i].color('x')) {
+      case '7f7f7f':
+        ++k; break;
+      case '7f7fff':
+        ++b; break;
+      case '7fff7f':
+        ++g; break;
+      case '7fffff':
+        ++c; break;
+      case 'ff7f7f':
+        ++r; break;
+      case 'ff7fff':
+        ++m; break;
+      case 'ffff7f':
+        ++y; break;
+      case 'ffffff':
+        ++w;
+    }
+  }
+  document.getElementById('label').innerHTML = 'Black: '+k+' Blue: '+b+' Green: '+g+' Cyan: '+c+' Red: '+r+' Magenta: '+m+' Yellow: '+y+' White: '+w;
+
+}
+		</script> 
+        <button onClick="loop();">Step</button>
+	</body> 
+</html> 
+

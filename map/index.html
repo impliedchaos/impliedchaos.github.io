@@ -1,0 +1,42 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Places That I Have Lived</title>
+    <script src="http://maps.google.com/maps?file=api&amp;v=2&amp;key=AIzaSyBS_xc61GFGPiHcSTx7Vyock64ts-lOkMw" type="text/javascript"></script>
+    <style type="text/css">
+      body {font-family: sans-serif,Lucida Sans,Arial,Helvetica; text-align:center; background-color:#444;}
+      #nav { height: 710px; width: 320px; position: relative; top:10px; left:10px; overflow:auto;}
+      #nav p { background-color: #CFC; width:296px; padding: 2px; margin-top:0; margin-bottom: 10px;}
+      #nav p a { text-decoration:none; }
+      #nav p a.h { background-color: #BEB; width:292px; display: block; padding:2px; text-align:center; text-decoration:none; font-weight:bold;}
+      #nav p img { border:0; float: left; margin-right: 6px; }
+      #nav p.nsv { background-color: #FCC; width:296px; padding: 2px;}
+      #nav p.nsv a { text-decoration:none; }
+      #nav p.nsv a.h { background-color: #EBB; width:292px; display: block; padding:2px; text-align:center; text-decoration:none; font-weight:bold;}
+      #nav p.tit { background-color: #CCC; width:296px; padding: 2px;}
+      #nav p.tit a.h { background-color: #999; width:292px; display: block; padding:2px; text-align:center; text-decoration:none; font-weight:bold;}
+      #map { height: 350px; width: 500px; position: relative; top:-700px; left:340px; text-align:center;}
+      #sv { height: 350px; width: 500px; position: relative; top:-690px; left:340px; background-color:#000; color:#999; text-align:center; font-size:2em;}
+      #ie {width:100%; text-align:center;}
+      #title {margin:0 auto;width:830px;padding:10px;background-color:#999;font-size:2em;font-weight:bold;}
+      #mtxt {margin:0 auto;background-color:#ccc;width:830px;padding:10px;}
+      #main {margin:0 auto;background-color:#fff;width:850px;height:730px;text-align:left;}
+      #footer {margin:0 auto;width:830px;padding:10px;font-size:small;}
+    </style>
+  </head>
+  <body onunload="GUnload()">
+    <div id="ie">
+      <div id="title">Places I've Lived</div>
+      <div id="mtxt">Below are the places that I (Dave Maez) have lived over the years.  At least the ones I can remember.  The residences listed in pink have no street view, and if there's no street view then you get to see a modern <i>Big Boy</i> statue in Ohio.</div>
+      <div id="main">
+        <div id="nav"></div>
+        <div id="map"></div>
+        <div id="sv"></div>
+      </div>
+      <div id="footer">&copy; 2008, yo mama. no rights reserved.</div>
+    </div>
+    <script src="index.js" type="text/javascript"></script>
+  </body>
+</html>
