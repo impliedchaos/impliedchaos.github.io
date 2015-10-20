@@ -10,7 +10,7 @@ div { border: 1px solid black; margin: 1px; display: inline-block;}
     <input type="file" id="uploadimage" /><!-- or
     <button onClick="openURL()">Use URL:</button> <input id="lurl" type="text" /> --> <br/>
     <button onClick="doIt()">Create JPEG Artifacts</button>
-    Base JPEG compression: <input id="factor" type="range" min=".1" max=".5" step=".01" value=".2" onchange="document.getElementById('fval').innerHTML=this.value" /><label id="fval">.2</label>
+    Base JPEG compression: <input id="factor" type="range" min="0" max=".5" step=".01" value=".2" onchange="document.getElementById('fval').innerHTML=this.value" /><label id="fval">.2</label>
     <br/><br/>
     <div>Input:<br/><img id="in" /></div>
     <div>Output:<br/><img id="out" /></div>
