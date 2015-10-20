@@ -7,8 +7,8 @@ div { border: 1px solid black; margin: 1px; display: inline-block;}
   </head>
   <body>
     <h1>JPEG Artifact Generator</h1>
-    <input type="file" id="uploadimage" /> or
-    <button onClick="openURL()">Use URL:</button> <input id="lurl" type="text" /><br/>
+    <input type="file" id="uploadimage" /><!-- or
+    <button onClick="openURL()">Use URL:</button> <input id="lurl" type="text" /> --> <br/>
     <button onClick="doIt()">Create JPEG Artifacts</button>
     Base JPEG compression: <input id="factor" type="range" min=".1" max=".5" step=".01" value=".2" onchange="document.getElementById('fval').innerHTML=this.value" /><label id="fval">.2</label>
     <br/><br/>
