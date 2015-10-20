@@ -11,6 +11,7 @@ div { border: 1px solid black; margin: 1px; display: inline-block;}
     <button onClick="openURL()">Use URL:</button> <input id="lurl" type="text" /> --> <br/>
     <button onClick="doIt()">Create JPEG Artifacts</button>
     Base JPEG compression: <input id="factor" type="range" min="0" max=".5" step=".01" value=".2" onchange="document.getElementById('fval').innerHTML=this.value" /><label id="fval">.2</label>
+    <button onClick="reset()">Reset</button>
     <br/><br/>
     <div>Input:<br/><img id="in" /></div>
     <div>Output:<br/><img id="out" /></div>
@@ -19,7 +20,15 @@ div { border: 1px solid black; margin: 1px; display: inline-block;}
 var cvs = document.createElement('canvas');
 var ctx = cvs.getContext('2d');
 
-function openFile(ev) {
+function reset() {
+    var img = document.getElementById('out');
+    var oimg = document.getElementById('in');
+
+    img.src = oimg.src;
+    ctx.drawImage(oimg, 0, 0);
+}
+
+function openFile(evnt) {
     var img = document.getElementById('out');
     var oimg = document.getElementById('in');
     var f = document.getElementById("uploadimage").files[0];
@@ -32,7 +41,6 @@ function openFile(ev) {
         cvs.height = img.height;
         cvs.width = img.width;
         ctx.drawImage(img, 0, 0);
-        url.revokeObjectURL(src);
     }
 }
 
