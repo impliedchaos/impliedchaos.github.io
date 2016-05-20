@@ -1,0 +1,117 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Dragon Curve</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        <input id="size" value="360" type="text" /><button onClick="drawCurve(document.getElementById('size').value)">Draw</button><br/>
+        <span id="label"></span><br/>
+		<script type="text/javascript"> 
+
+var canvas, canvas2, context, image, data, context2,dcurve;
+var HEIGHT = 640;
+var WIDTH = 640;
+var space = 5;
+ 
+function curve(iter) {
+  function revswap(foo) {
+    var rev = foo.slice(0);
+    for (var i = 0; i < rev.length; i++) {
+      rev[i] ^= 1;
+    }
+    rev.reverse();
+    return(rev);
+  }
+  var c = [];
+  for (var i = 0; i < iter; i++) {
+    c = c.concat([0],revswap(c));
+  }
+  return(c);
+}
+    
+
+function init() {
+  dcurve = curve(20);
+  var container;
+
+  document.getElementById('label').innerHTML = dcurve.join(", ");
+
+  container = document.getElementById('container');
+ 
+  canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.style.width = WIDTH + "px";
+  canvas.style.height = HEIGHT + "px";
+  container.appendChild(canvas);
+ 
+  context = canvas.getContext("2d");
+
+  drawCurve(0);
+}
+
+function drawCurve(size) {
+  var csz  = size+1;
+  context.fillStyle = "rgb(0, 0, 0)";
+  context.fillRect (0, 0, WIDTH, HEIGHT);
+//image = context.getImageData(0, 0, WIDTH, HEIGHT);
+//data = image.data;
+  context.rotate(0);
+  context.rotate(size*Math.PI/180);
+
+  var col = [ "rgb(255,255,0)","rgb(255,0,0)",'rgb(0,255,0)','rgb(0,0,255)' ];
+for (var j = 0; j < 4; j++) {
+  var cy = Math.floor(HEIGHT / 2);
+  var cx = Math.floor(WIDTH / 2);
+  var cdir = j;
+  context.strokeStyle = col[j];
+  context.lineWidth = 1;
+  context.beginPath();
+  context.moveTo(cx,cy);
+  switch (cdir % 4) {
+    case 0: cx += csz; break;
+    case 1: cy += csz; break;
+    case 2: cx -= csz; break;
+    case 3: cy -= csz; break;
+  }
+  context.lineTo(cx,cy);
+  for (var i = 0; i < dcurve.length; i++) {
+    if (! dcurve[i]) {
+      cdir = (cdir + 1);
+    } else {
+      cdir = (cdir - 1);
+    }
+//  document.getElementById('label').innerHTML += cdir + ' ';
+    switch (cdir % 4) {
+      case 0: cx += csz; break;
+      case 1: cy += csz; break;
+      case 2: cx -= csz; break;
+      case 3: cy -= csz; break;
+    }
+    context.lineTo(cx,cy);
+  }
+  context.stroke();
+}
+
+}
+ 
+function loop() {
+}
+
+init();
+		</script> 
+	</body> 
+</html> 
+

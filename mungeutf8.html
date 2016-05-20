@@ -577,6 +577,23 @@ function decircled(text) {
    return(out);
 }
 
+function cursive(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 64 && c < 91) {
+        c += 119951;
+        outstr += String.fromCodePoint(c);
+    } else if (c > 96 && c < 123) {
+        c += 119945;
+        outstr += String.fromCodePoint(c);
+    } else {
+        outstr += instr.charAt(i);
+    }
+  }
+  return(outstr);
+}
+
 function fullWidth(text) {
    var out = '';
    for (var i = 0; i < text.length; i++) {
@@ -970,6 +987,9 @@ function mungeIt(func) {
       text = box.value;
    }
    switch(func) {
+      case 'cursive':
+         out = cursive(text);
+         break
       case 'fullWidth':
          out = fullWidth(text);
          break
@@ -1337,6 +1357,7 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('decircled');">de-Circled</button>
          <button onclick="mungeIt('fucked');">K-Rad Modern</button>
          <button onclick="mungeIt('banner');">Banner</button>
+         <button onclick="mungeIt('cursive');">Cursive</button>
    </div><br/><div><span class="shead">Unicode to ASCII Transliteration:</span><br/> 
          <button onclick="mungeIt('transR2E');">Russian to "English"</button>
          <button onclick="mungeIt('transK2E');">Hiragana/Katakana to Romaji</button>

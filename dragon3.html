@@ -1,0 +1,157 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Dragon Curve</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        <span id="label"></span><br/>
+		<script type="text/javascript"> 
+
+var canvas, canvas2, context, image, data, context2,dcurve;
+var HEIGHT = 800;
+var WIDTH = 1000;
+var space = 5;
+ 
+function hslToRgb(h, s, l){
+    var r, g, b;
+    if (h > 1) { h -= Math.floor(h); }
+
+    if(s == 0){
+        r = g = b = l; // achromatic
+    }else{
+        function hue2rgb(p, q, t){
+            if(t < 0) t += 1;
+            if(t > 1) t -= 1;
+            if(t < 1/6) return p + (q - p) * 6 * t;
+            if(t < 1/2) return q;
+            if(t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+            return p;
+        }
+
+        var q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+        var p = 2 * l - q;
+        r = hue2rgb(p, q, h + 1/3);
+        g = hue2rgb(p, q, h);
+        b = hue2rgb(p, q, h - 1/3);
+    }
+    return "rgb(" + Math.floor(r * 255) + "," + Math.floor(g * 255) + "," + Math.floor(b * 255) + ")";
+}
+
+function curve(iter) {
+  function revswap(foo) {
+    var rev = foo.slice(0);
+    for (var i = 0; i < rev.length; i++) {
+      rev[i] ^= 1;
+    }
+    rev.reverse();
+    return(rev);
+  }
+  var c = [];
+  for (var i = 0; i < iter; i++) {
+    c = c.concat([0],revswap(c));
+  }
+  return(c);
+}
+    
+
+function init() {
+  dcurve = curve(13);
+  var container;
+
+  document.getElementById('label').innerHTML = dcurve.join(", ");
+
+  container = document.getElementById('container');
+ 
+  canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.style.width = WIDTH + "px";
+  canvas.style.height = HEIGHT + "px";
+  container.appendChild(canvas);
+ 
+  context = canvas.getContext("2d");
+
+  var csz  = 1;
+  context.fillStyle = "rgb(0, 0, 0)";
+  context.fillRect (0, 0, WIDTH, HEIGHT);
+//image = context.getImageData(0, 0, WIDTH, HEIGHT);
+//data = image.data;
+
+  var col = [ "rgb(255,255,0)","rgb(255,0,0)",'rgb(0,255,0)','rgb(0,0,255)' ];
+  var cdir = 1;
+  var cy = Math.floor(HEIGHT / 2)+0.5;
+  var cx = Math.floor(WIDTH / 4)+0.5;
+  context.strokeStyle = "rgb(255,255,255)";
+  context.lineWidth = 1;
+  csz = 2;
+  for (var j = 0; j < 2; j++) {
+   cdir = j*2 + 1;
+   
+  //var cy = Math.floor(HEIGHT / 2);
+ // var cx = Math.floor(WIDTH / 2);
+    switch (cdir % 4) {
+        case 0: cx += csz; cy += csz; break;
+        case 1: cy += csz; cx -= csz; break;
+        case 2: cx -= csz; cy -= csz; break;
+        case 3: cy -= csz; cx += csz; break;
+    }
+    context.moveTo(cx,cy);
+  for (var i = 0; i < dcurve.length; i++) {
+    context.beginPath();
+    context.moveTo(cx,cy);
+    /*context.strokeStyle = hslToRgb(i/(dcurve.length), 1, 0.5);
+    context.strokeStyle = hslToRgb(Math.log(i)/Math.log(2)/10, 1, 0.5);
+    context.strokeStyle = hslToRgb(Math.floor(Math.log(i)/Math.log(2))/14+.7, 1, 0.5);
+    */
+    context.strokeStyle = hslToRgb((Math.floor(Math.log(i)/Math.log(2)) / 13 )+(i/dcurve.length) + (j*0.2), 1, 0.5);
+    switch (cdir % 4) {
+        case 0: cx += csz; cy += csz; break;
+        case 1: cy += csz; cx -= csz; break;
+        case 2: cx -= csz; cy -= csz; break;
+        case 3: cy -= csz; cx += csz; break;
+    }
+    if (! dcurve[i]) {
+      cdir = (cdir + 1);
+    } else {
+      cdir = (cdir - 1);
+    }
+    if (cdir < 0) { cdir += 4; }
+    var ox=cx; var oy=cy;
+    switch (cdir % 4) {
+        case 0: cx += csz; cy += csz; break;
+        case 1: cy += csz; cx -= csz; break;
+        case 2: cx -= csz; cy -= csz; break;
+        case 3: cy -= csz; cx += csz; break;
+    }
+    context.arcTo(ox,oy,cx,cy,csz);
+    context.stroke();
+  }
+    switch (cdir % 4) {
+        case 0: cx += csz; cy += csz; break;
+        case 1: cy += csz; cx -= csz; break;
+        case 2: cx -= csz; cy -= csz; break;
+        case 3: cy -= csz; cx += csz; break;
+    }
+  }
+}
+ 
+function loop() {
+}
+
+init();
+		</script> 
+	</body> 
+</html> 
+
