@@ -527,6 +527,70 @@ var lletter = "160,160,160,160 / 160,160,160,160 / 160,160,160,160 / 160,9472,94
   return(out);
 }
 
+function subscript(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 47 && c < 58) {
+      c += 8272;
+      outstr += String.fromCharCode(c);
+    } else if (c > 39 && c < 42) {
+      c += 8293;
+      outstr += String.fromCharCode(c);
+    } else if (c == 43) {
+      c = 8330;
+      outstr += String.fromCharCode(c);
+    } else if (c == 45) {
+      c = 8331;
+      outstr += String.fromCharCode(c);
+    } else if (c == 61) {
+      c = 8332;
+      outstr += String.fromCharCode(c);
+    } else {
+      outstr += instr.charAt(i);
+    }
+  }
+  return(outstr);
+}
+
+function superscript(instr) {
+  var outstr='';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 49 && c < 52) {
+      c += 128;
+      outstr += String.fromCharCode(c);
+    } else if (c > 51 && c < 58) {
+      c += 8256;
+      outstr += String.fromCharCode(c);
+    } else if (c > 39 && c < 42) {
+      c += 8277;
+      outstr += String.fromCharCode(c);
+    } else if (c == 43) {
+      c = 8314;
+      outstr += String.fromCharCode(c);
+    } else if (c == 45) {
+      c = 8315;
+      outstr += String.fromCharCode(c);
+    } else if (c == 61) {
+      c = 8316;
+      outstr += String.fromCharCode(c);
+    } else if (c == 49) {
+      c = 185;
+      outstr += String.fromCharCode(c);
+    } else if (c == 48) {
+      c = 8304;
+      outstr += String.fromCharCode(c);
+    } else if (c == 110) {
+      c = 8319;
+      outstr += String.fromCharCode(c);
+    } else {
+      outstr += instr.charAt(i);
+    }
+  }
+  return(outstr);
+}  
+
 function circled(text) {
    var out = '';
    for (var i = 0; i < text.length; i++) {
@@ -996,6 +1060,12 @@ function mungeIt(func) {
       case 'deFullWidth':
          out = deFullWidth(text);
          break;
+      case 'superscript':
+         out = superscript(text);
+         break;
+      case 'subscript':
+         out = subscript(text);
+         break;
       case 'circled':
          out = circled(text);
          break;
@@ -1358,6 +1428,8 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('fucked');">K-Rad Modern</button>
          <button onclick="mungeIt('banner');">Banner</button>
          <button onclick="mungeIt('cursive');">Cursive</button>
+         <button onclick="mungeIt('subscript');">Subscript #s</button>
+         <button onclick="mungeIt('superscript');">Superscript #s</button>
    </div><br/><div><span class="shead">Unicode to ASCII Transliteration:</span><br/> 
          <button onclick="mungeIt('transR2E');">Russian to "English"</button>
          <button onclick="mungeIt('transK2E');">Hiragana/Katakana to Romaji</button>
