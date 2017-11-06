@@ -1,0 +1,104 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Elastic Balls</title> 
+        <link rel="image_src" href="/img/balls3.png" />
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; font-family: monospace;}
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        X: <span id="ilabel"></span><br/>
+        Y: <span id="clabel"></span><br/>
+		<script type="text/javascript"> 
+
+function point() {
+  this.x = 0;
+  this.y = 0;
+}
+
+var canvas, context, image, data, trace;
+var points = [];
+var WIDTH = 800;
+var HEIGHT = 800;
+ 
+init();
+setInterval(loop, 1000 / 600);
+
+function init() {
+  var container;
+
+  container = document.getElementById('container');
+ 
+  canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.style.width = WIDTH + "px";
+  canvas.style.height = HEIGHT + "px";
+  container.appendChild(canvas);
+ 
+  context = canvas.getContext("2d");
+  context.fillStyle = "rgb(0, 0, 0)";
+  context.fillRect (0, 0, WIDTH, HEIGHT);
+  image = context.getImageData(0, 0, WIDTH, HEIGHT);
+  data = image.data;
+
+
+  points[0] = new point();
+  points[0].x = 5;
+  points[0].y = 5;
+  points[1] = new point();
+  points[1].x = 5;
+  points[1].y = HEIGHT - 5;
+  points[2] = new point();
+  points[2].x = WIDTH - 5;
+  points[2].y = HEIGHT - 5;
+  points[3] = new point();
+  points[3].x = WIDTH - 5;
+  points[3].y = 5;
+  trace = new point();
+  trace.x = WIDTH/2;
+  trace.y = HEIGHT - 5;
+
+  context.fillStyle="rgb(255,255,255)";
+  context.fillRect(0,0,WIDTH,HEIGHT);
+
+  context.fillStyle="rgb(0,0,0)";
+  for (var i = 0; i < 4; i++) {
+    context.beginPath();
+    context.arc(points[i].x,points[i].y,1,0,Math.PI*2,true);
+    context.fill();
+  }
+
+  document.getElementById('ilabel').innerHTML = "...";
+}
+ 
+function loop() {
+  var r = Math.floor(Math.random() * 4);
+  trace.x = Math.abs(trace.x - points[r].x) * 0.5;
+  trace.y = Math.abs(trace.y - points[r].y) * 0.5;
+
+  context.fillStyle="rgba(0,0,0,0.9)";
+
+  context.beginPath();
+  context.arc(trace.x,trace.y,1,0,Math.PI*2,true);
+  context.fill();
+  
+  document.getElementById('ilabel').innerHTML = trace.x;
+  document.getElementById('clabel').innerHTML = trace.y;
+}
+
+
+		</script> 
+	</body> 
+</html> 
+
