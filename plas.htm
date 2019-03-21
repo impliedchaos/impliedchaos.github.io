@@ -1,0 +1,72 @@
+<!doctype html> 
+<html> 
+	<head> 
+		<meta charset="utf-8"> 
+		<title>Plasma!</title> 
+		<style type="text/css"> 
+			body { background-color: #000; margin: 0px; overflow: hidden; }
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:5px solid #777; }
+		</style> 
+	</head> 
+	<body> 
+		<div id="container"></div> 
+		
+		<script type="text/javascript"> 
+			var WIDTH, HEIGHT;
+			var context, image, data;
+            var rot1 = 0;
+            var rot2 = 90;
+
+			init();
+			setInterval(loop, 1000 / 60);
+ 
+			function init() {
+				var container, canvas;
+
+                //WIDTH = window.innerWidth;
+                //HEIGHT = window.innerHeight;
+
+                // MCGA MODE 0x13!!!!
+                WIDTH = 320;
+                HEIGHT = 200;
+				
+				container = document.getElementById('container');
+ 
+				canvas = document.createElement("canvas");
+				canvas.width = WIDTH;
+				canvas.height = HEIGHT;
+				canvas.style.width = WIDTH*2 + "px";
+				canvas.style.height = HEIGHT*2 + "px";
+//				canvas.style.width = window.innerWidth + "px";
+//				canvas.style.height = window.innerHeight + "px";
+				container.appendChild(canvas);
+ 
+				context = canvas.getContext("2d");
+				context.fillStyle = "rgb(0, 0, 0)";
+				context.fillRect (0, 0, WIDTH, HEIGHT);
+				image = context.getImageData(0, 0, WIDTH, HEIGHT);
+				data = image.data;
+			}
+ 
+			function loop() {
+              rot1 += Math.floor(Math.random()*5);
+              rot1 = ++rot1 % 720;
+              //rot2 = ++rot2;
+              rot2 = ++rot2 % 720;
+
+              for (var i = 0; i < WIDTH; i++) {
+                for (var j = 0; j < HEIGHT; j++) {
+                  data[(i+j*WIDTH)*4] = Math.floor(Math.cos((rot1+j)*Math.PI/180)*32+32) + Math.floor(Math.cos((720-(rot1+i))*Math.PI/180)*32+32)+Math.floor(Math.cos((720-(rot2+j))*Math.PI/180)*32+32) + Math.floor(Math.cos((rot2+i)*Math.PI/180)*32+32);
+                  data[(i+j*WIDTH)*4+1] = Math.floor(Math.cos((rot1+j)*Math.PI/360)*32+32) + Math.floor(Math.cos((720-(rot1+i))*Math.PI/180)*32+32)+Math.floor(Math.cos((720-(rot2+j))*Math.PI/180)*32+32) + Math.floor(Math.cos((rot2+i)*Math.PI/180)*32+32);
+                  data[(i+j*WIDTH)*4+2] = Math.floor(Math.cos((720-rot1+j)*Math.PI/360)*64+64) + Math.floor(Math.cos((720-rot2+i)*Math.PI/360)*64+64);
+                }
+              }
+
+			  context.putImageData(image, 0, 0);
+			}
+		</script> 
+	</body> 
+</html> 
+

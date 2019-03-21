@@ -1,0 +1,131 @@
+<!doctype html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Circles!</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; }
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        <span id="rlabel"></span><br/>
+        Speed: <input id="sinp" type="range" min="1" max="10" value="1" /><span id="speed">1</span><br/>
+        Width: <input id="ainp" type="range" min="1" max="100" step="1" value="25" /><span id="angle"></span><br/>
+        <button onclick="bw=!bw;">Color/BW</button> <button onclick="fclear();">Clear</button></button><br/>
+        <button onclick="pp();">Play/Pause</button> <button onclick="loop();">Step</button><br/>
+        <button onclick="DUPIMAGE=!DUPIMAGE;">Copy to Image/No Copy</button><br/>
+        </div>
+        <div><img id="savestate"/></div>
+		
+		<script type="text/javascript"> 
+			var WIDTH, HEIGHT,
+            canvas, canvas2, canvas3,
+			context, image, data, context2, context3;
+            var rot1 = 0;
+            var rot2 = 90;
+            var speed = 5;
+            var bw = 0;
+            WIDTH = 500;
+            HEIGHT = 278;
+            var dot = Math.round(Math.sqrt(WIDTH/10));
+            dot = 8;
+            var GOGOGO = 0;
+            var DUPIMAGE = 0;
+ 
+			init();
+            GOGOGO = setInterval(loop, 1000 / 60);
+
+            function pp() {
+              if (GOGOGO) {
+                clearInterval(GOGOGO);
+                GOGOGO = 0;
+              } else {
+                GOGOGO = setInterval(loop, 1000 / 60);
+              }
+            }
+            
+            function fclear() {
+               context3.fillStyle="rgba(0,0,0,1)";
+               context3.fillRect(0,0,WIDTH,HEIGHT);
+               context.drawImage(canvas3,0,0,WIDTH,HEIGHT);
+            }
+            
+			function init() {
+				var container;
+
+				container = document.getElementById('container');
+ 
+				canvas = document.createElement("canvas");
+				canvas.width = WIDTH;
+				canvas.height = HEIGHT;
+				canvas.style.width = WIDTH + "px";
+				canvas.style.height = HEIGHT + "px";
+//				canvas.style.width = window.innerWidth + "px";
+//				canvas.style.height = window.innerHeight + "px";
+				container.appendChild(canvas);
+ 
+				context = canvas.getContext("2d");
+				context.fillStyle = "rgb(0, 0, 0)";
+				context.fillRect (0, 0, WIDTH, HEIGHT);
+				image = context.getImageData(0, 0, WIDTH, HEIGHT);
+				data = image.data;
+
+				canvas2 = document.createElement("canvas");
+				canvas2.width = WIDTH*1.05;
+                canvas2.height = HEIGHT*1.05;
+				context2 = canvas2.getContext("2d");
+
+				canvas3 = document.createElement("canvas");
+				canvas3.width = WIDTH;
+                canvas3.height = HEIGHT;
+				context3 = canvas3.getContext("2d");
+			}
+ 
+			function loop() {
+               var ds, sx, sy;
+               speed = Math.floor(document.getElementById("sinp").value);
+               rot2 = Math.floor(document.getElementById("ainp").value);
+               document.getElementById("rlabel").innerHTML=rot1;
+               document.getElementById("angle").innerHTML=rot2;
+               document.getElementById("speed").innerHTML=speed;
+               
+
+               rot1 = (rot1 + speed) % 720;
+//             context2.drawImage(canvas,0,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
+//             context3.drawImage(canvas2,0,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
+               context3.fillStyle="rgba(255,255,255,1)";
+               context3.fillRect(0,0,WIDTH,HEIGHT);
+
+               function circus(x, y, w, style) {
+                 var z = Math.round(WIDTH / w / 2);
+
+                 context3.strokeStyle=style;
+                 context3.lineWidth=w;
+                 for (var i = 0; i < z; i++) {
+                   context3.beginPath();
+                   context3.arc(x,y,i*w*2+1,0,Math.PI*2);
+                   context3.stroke();
+                 }
+               }
+
+               circus(Math.floor(WIDTH/2)+Math.floor(Math.sin(rot1*Math.PI/360)*WIDTH*0.15+WIDTH*0.15),Math.floor(HEIGHT/2), rot2, "rgba(0,0,0,0.75)");
+               circus(Math.floor(WIDTH/2)-Math.floor(Math.sin(rot1*Math.PI/360)*WIDTH*0.15+WIDTH*0.15),Math.floor(HEIGHT/2), rot2, "rgba(0,0,0,0.75)");
+
+               context.drawImage(canvas3,0,0,WIDTH,HEIGHT);
+               if (DUPIMAGE) {
+                  var dURL = canvas.toDataURL();
+                  document.getElementById("savestate").src = dURL;
+               }
+			}
+		</script> 
+	</body> 
+</html> 
+

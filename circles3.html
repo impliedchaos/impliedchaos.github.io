@@ -1,0 +1,125 @@
+<!doctype html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Sine Bobs!</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; }
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        <span id="rlabel"></span><br/>
+        Zoom: <input id="sinp" type="range" min="0" max="3" value="0" step="0.01" style="width:500px" onchange="document.getElementById('speed').innerHTML=Number(this.value).toFixed(2);"/><span id="speed" style="width:5em;font-family:monospace">0.00</span><br/>
+        Depth: <input id="ainp" type="range" min="1" max="50" step="1" value="13" style="width:500px" onchange="document.getElementById('angle').innerHTML=this.value;"/><span id="angle" style="font-family:monospace">13</span><br/>
+        <button onclick="loop();">Redraw</button><br/>
+        <input id="last" type="checkbox" checked="checked"/>Only draw the deepest curve<br/>
+        </div>
+        <div><img id="savestate"/></div>
+		
+		<script type="text/javascript"> 
+			var WIDTH, HEIGHT,
+            canvas, canvas2, canvas3,
+			context, image, data, context2, context3;
+            var rot1 = 0;
+            var rot2 = 90;
+            var speed = 5;
+            var bw = 0;
+            WIDTH = 601;
+            HEIGHT = 601;
+			init();
+            loop();
+
+			function init() {
+				var container;
+
+				container = document.getElementById('container');
+ 
+				canvas = document.createElement("canvas");
+				canvas.width = WIDTH;
+				canvas.height = HEIGHT;
+				canvas.style.width = WIDTH + "px";
+				canvas.style.height = HEIGHT + "px";
+				container.appendChild(canvas);
+ 
+				context = canvas.getContext("2d");
+				context.fillStyle = "rgb(0, 0, 0)";
+				context.fillRect (0, 0, WIDTH, HEIGHT);
+				image = context.getImageData(0, 0, WIDTH, HEIGHT);
+				data = image.data;
+			}
+
+            function fclear() {
+				context.fillStyle = "rgb(0, 0, 0)";
+				context.fillRect (0, 0, WIDTH, HEIGHT);
+            }
+ 
+			function loop() {
+               var sx, sy, i,j;
+               var ox = new Array();
+               var oy = new Array();
+               var rot = new Array();
+               var depth = document.getElementById("ainp").value;
+               var zoom = Math.pow(10,document.getElementById("sinp").value);
+               var degrees = 7200 * zoom;
+               var rad = 2 * Math.PI / degrees;
+               var size = (WIDTH - 1) / 3 * zoom;
+               var offset = (WIDTH - 1) / 2;
+               var start = 0;
+               var lastonly = document.getElementById("last").checked;
+
+               fclear();
+
+               for (i = 0; i < depth; i++) {
+                 rot[i] = Math.round(degrees * 1 / 2);
+               }
+               while (rot[0] < Math.round(degrees * 6/ 6)) {
+                 i = 0;
+
+                 sx = Math.sin(rot[i] * rad) * size + offset + (size*9/10); 
+                 sy = Math.cos(rot[i] * rad) * size +  offset;
+            
+                 if (start && (!lastonly || i == (depth - 1)) && (sx > 0 && sx < WIDTH) && (sy > 0 && sy < HEIGHT)) {
+                   context.strokeStyle="hsla(" + Math.round(i * (360/depth)) + ",100%,50%,1)";
+                   context.beginPath();
+                   context.moveTo(ox[i],oy[i]);
+                   context.lineTo(sx,sy);
+                   context.stroke();
+                 }
+                 ox[i] = sx;
+                 oy[i] = sy;
+                 rot[i] += 1;
+
+                 for (i = 1; i < depth; i++) {
+                    sx = Math.sin(rot[i] * rad) * (size / Math.pow(3,i)) + sx;
+                    sy = Math.cos(rot[i] * rad) * (size / Math.pow(3,i)) + sy;
+                    if (start && (!lastonly || i == (depth - 1)) && (sx > 0 && sx < WIDTH) && (sy > 0 && sy < HEIGHT)) {
+                      context.strokeStyle="hsla(" + Math.round(i * (360/depth)) + ",100%,50%,1)";
+                      context.beginPath();
+                      context.moveTo(ox[i],oy[i]);
+                      context.lineTo(sx,sy);
+                      context.stroke();
+                    }
+                    ox[i] = sx;
+                    oy[i] = sy;
+                    rot[i] = rot[i - 1] * -3;
+                 }
+                 start = 1;
+               }
+ 
+               //context.drawImage(canvas3,0,0,WIDTH,HEIGHT);
+                  var dURL = canvas.toDataURL();
+                  document.getElementById("savestate").src = dURL;
+               
+			}
+		</script> 
+	</body> 
+</html> 
+

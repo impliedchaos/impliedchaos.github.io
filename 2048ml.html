@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>2048</title>
+    <script src="pop.js"></script>
+    <script src="http://d3js.org/d3.v3.min.js"></script>
+    <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+    <script src="https://wagenaartje.github.io/neataptic/cdn/1.4.7/neataptic.js"></script>
+    <script src="https://rawgit.com/wagenaartje/neataptic/master/graph/graph.js"></script>
+    <script src="https://rawgit.com/skeeto/rng-js/master/rng.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://rawgit.com/wagenaartje/neataptic/master/graph/graph.css">
+    <style>
+body { font-family: sans-serif; }
+table { display: inline-block; border: 1px solid #666; }
+td { width: 20px; height: 20px; background-color: #BBB; font-size: 8px; text-align: center;}
+.score { font-size: 8px; }
+.game { display: inline-block; font-size: 8px;}
+    </style>
+  </head>
+  <body>
+    <h1>Generation: <span id="genx">.</span></h1>
+    <h2>High Score: <span id="hisc">.</span></h2>
+    <h2>Mean Score: <span id="avsc">.</span></h2>
+    <h1>Highest Score: <span id="hxsc">.</span></h2>
+    <div class="game"><table><tr><td id="0td0"></td><td id="0td1"></td><td id="0td2"></td><td id="0td3"></td></tr><tr><td id="0td4"></td><td id="0td5"></td><td id="0td6"></td><td id="0td7"></td></tr><tr><td id="0td8"></td><td id="0td9"></td><td id="0td10"></td><td id="0td11"></td></tr><tr><td id="0td12"></td><td id="0td13"></td><td id="0td14"></td><td id="0td15"></td></tr></table><br/><span class="score" id="sc0"></span></div>
+    <div class="game"><table><tr><td id="1td0"></td><td id="1td1"></td><td id="1td2"></td><td id="1td3"></td></tr><tr><td id="1td4"></td><td id="1td5"></td><td id="1td6"></td><td id="1td7"></td></tr><tr><td id="1td8"></td><td id="1td9"></td><td id="1td10"></td><td id="1td11"></td></tr><tr><td id="1td12"></td><td id="1td13"></td><td id="1td14"></td><td id="1td15"></td></tr></table><br/><span class="score" id="sc1"></span></div>
+    <div class="game"><table><tr><td id="2td0"></td><td id="2td1"></td><td id="2td2"></td><td id="2td3"></td></tr><tr><td id="2td4"></td><td id="2td5"></td><td id="2td6"></td><td id="2td7"></td></tr><tr><td id="2td8"></td><td id="2td9"></td><td id="2td10"></td><td id="2td11"></td></tr><tr><td id="2td12"></td><td id="2td13"></td><td id="2td14"></td><td id="2td15"></td></tr></table><br/><span class="score" id="sc2"></span></div>
+    <div class="game"><table><tr><td id="3td0"></td><td id="3td1"></td><td id="3td2"></td><td id="3td3"></td></tr><tr><td id="3td4"></td><td id="3td5"></td><td id="3td6"></td><td id="3td7"></td></tr><tr><td id="3td8"></td><td id="3td9"></td><td id="3td10"></td><td id="3td11"></td></tr><tr><td id="3td12"></td><td id="3td13"></td><td id="3td14"></td><td id="3td15"></td></tr></table><br/><span class="score" id="sc3"></span></div>
+    <div class="game"><table><tr><td id="4td0"></td><td id="4td1"></td><td id="4td2"></td><td id="4td3"></td></tr><tr><td id="4td4"></td><td id="4td5"></td><td id="4td6"></td><td id="4td7"></td></tr><tr><td id="4td8"></td><td id="4td9"></td><td id="4td10"></td><td id="4td11"></td></tr><tr><td id="4td12"></td><td id="4td13"></td><td id="4td14"></td><td id="4td15"></td></tr></table><br/><span class="score" id="sc4"></span></div>
+    <div class="game"><table><tr><td id="5td0"></td><td id="5td1"></td><td id="5td2"></td><td id="5td3"></td></tr><tr><td id="5td4"></td><td id="5td5"></td><td id="5td6"></td><td id="5td7"></td></tr><tr><td id="5td8"></td><td id="5td9"></td><td id="5td10"></td><td id="5td11"></td></tr><tr><td id="5td12"></td><td id="5td13"></td><td id="5td14"></td><td id="5td15"></td></tr></table><br/><span class="score" id="sc5"></span></div>
+    <div class="game"><table><tr><td id="6td0"></td><td id="6td1"></td><td id="6td2"></td><td id="6td3"></td></tr><tr><td id="6td4"></td><td id="6td5"></td><td id="6td6"></td><td id="6td7"></td></tr><tr><td id="6td8"></td><td id="6td9"></td><td id="6td10"></td><td id="6td11"></td></tr><tr><td id="6td12"></td><td id="6td13"></td><td id="6td14"></td><td id="6td15"></td></tr></table><br/><span class="score" id="sc6"></span></div>
+    <div class="game"><table><tr><td id="7td0"></td><td id="7td1"></td><td id="7td2"></td><td id="7td3"></td></tr><tr><td id="7td4"></td><td id="7td5"></td><td id="7td6"></td><td id="7td7"></td></tr><tr><td id="7td8"></td><td id="7td9"></td><td id="7td10"></td><td id="7td11"></td></tr><tr><td id="7td12"></td><td id="7td13"></td><td id="7td14"></td><td id="7td15"></td></tr></table><br/><span class="score" id="sc7"></span></div>
+    <div class="game"><table><tr><td id="8td0"></td><td id="8td1"></td><td id="8td2"></td><td id="8td3"></td></tr><tr><td id="8td4"></td><td id="8td5"></td><td id="8td6"></td><td id="8td7"></td></tr><tr><td id="8td8"></td><td id="8td9"></td><td id="8td10"></td><td id="8td11"></td></tr><tr><td id="8td12"></td><td id="8td13"></td><td id="8td14"></td><td id="8td15"></td></tr></table><br/><span class="score" id="sc8"></span></div>
+    <div class="game"><table><tr><td id="9td0"></td><td id="9td1"></td><td id="9td2"></td><td id="9td3"></td></tr><tr><td id="9td4"></td><td id="9td5"></td><td id="9td6"></td><td id="9td7"></td></tr><tr><td id="9td8"></td><td id="9td9"></td><td id="9td10"></td><td id="9td11"></td></tr><tr><td id="9td12"></td><td id="9td13"></td><td id="9td14"></td><td id="9td15"></td></tr></table><br/><span class="score" id="sc9"></span></div>
+    <br/>
+    <div class="game"><table><tr><td id="10td0"></td><td id="10td1"></td><td id="10td2"></td><td id="10td3"></td></tr><tr><td id="10td4"></td><td id="10td5"></td><td id="10td6"></td><td id="10td7"></td></tr><tr><td id="10td8"></td><td id="10td9"></td><td id="10td10"></td><td id="10td11"></td></tr><tr><td id="10td12"></td><td id="10td13"></td><td id="10td14"></td><td id="10td15"></td></tr></table><br/><span class="score" id="sc10"></span></div>
+    <div class="game"><table><tr><td id="11td0"></td><td id="11td1"></td><td id="11td2"></td><td id="11td3"></td></tr><tr><td id="11td4"></td><td id="11td5"></td><td id="11td6"></td><td id="11td7"></td></tr><tr><td id="11td8"></td><td id="11td9"></td><td id="11td10"></td><td id="11td11"></td></tr><tr><td id="11td12"></td><td id="11td13"></td><td id="11td14"></td><td id="11td15"></td></tr></table><br/><span class="score" id="sc11"></span></div>
+    <div class="game"><table><tr><td id="12td0"></td><td id="12td1"></td><td id="12td2"></td><td id="12td3"></td></tr><tr><td id="12td4"></td><td id="12td5"></td><td id="12td6"></td><td id="12td7"></td></tr><tr><td id="12td8"></td><td id="12td9"></td><td id="12td10"></td><td id="12td11"></td></tr><tr><td id="12td12"></td><td id="12td13"></td><td id="12td14"></td><td id="12td15"></td></tr></table><br/><span class="score" id="sc12"></span></div>
+    <div class="game"><table><tr><td id="13td0"></td><td id="13td1"></td><td id="13td2"></td><td id="13td3"></td></tr><tr><td id="13td4"></td><td id="13td5"></td><td id="13td6"></td><td id="13td7"></td></tr><tr><td id="13td8"></td><td id="13td9"></td><td id="13td10"></td><td id="13td11"></td></tr><tr><td id="13td12"></td><td id="13td13"></td><td id="13td14"></td><td id="13td15"></td></tr></table><br/><span class="score" id="sc13"></span></div>
+    <div class="game"><table><tr><td id="14td0"></td><td id="14td1"></td><td id="14td2"></td><td id="14td3"></td></tr><tr><td id="14td4"></td><td id="14td5"></td><td id="14td6"></td><td id="14td7"></td></tr><tr><td id="14td8"></td><td id="14td9"></td><td id="14td10"></td><td id="14td11"></td></tr><tr><td id="14td12"></td><td id="14td13"></td><td id="14td14"></td><td id="14td15"></td></tr></table><br/><span class="score" id="sc14"></span></div>
+    <div class="game"><table><tr><td id="15td0"></td><td id="15td1"></td><td id="15td2"></td><td id="15td3"></td></tr><tr><td id="15td4"></td><td id="15td5"></td><td id="15td6"></td><td id="15td7"></td></tr><tr><td id="15td8"></td><td id="15td9"></td><td id="15td10"></td><td id="15td11"></td></tr><tr><td id="15td12"></td><td id="15td13"></td><td id="15td14"></td><td id="15td15"></td></tr></table><br/><span class="score" id="sc15"></span></div>
+    <div class="game"><table><tr><td id="16td0"></td><td id="16td1"></td><td id="16td2"></td><td id="16td3"></td></tr><tr><td id="16td4"></td><td id="16td5"></td><td id="16td6"></td><td id="16td7"></td></tr><tr><td id="16td8"></td><td id="16td9"></td><td id="16td10"></td><td id="16td11"></td></tr><tr><td id="16td12"></td><td id="16td13"></td><td id="16td14"></td><td id="16td15"></td></tr></table><br/><span class="score" id="sc16"></span></div>
+    <div class="game"><table><tr><td id="17td0"></td><td id="17td1"></td><td id="17td2"></td><td id="17td3"></td></tr><tr><td id="17td4"></td><td id="17td5"></td><td id="17td6"></td><td id="17td7"></td></tr><tr><td id="17td8"></td><td id="17td9"></td><td id="17td10"></td><td id="17td11"></td></tr><tr><td id="17td12"></td><td id="17td13"></td><td id="17td14"></td><td id="17td15"></td></tr></table><br/><span class="score" id="sc17"></span></div>
+    <div class="game"><table><tr><td id="18td0"></td><td id="18td1"></td><td id="18td2"></td><td id="18td3"></td></tr><tr><td id="18td4"></td><td id="18td5"></td><td id="18td6"></td><td id="18td7"></td></tr><tr><td id="18td8"></td><td id="18td9"></td><td id="18td10"></td><td id="18td11"></td></tr><tr><td id="18td12"></td><td id="18td13"></td><td id="18td14"></td><td id="18td15"></td></tr></table><br/><span class="score" id="sc18"></span></div>
+    <div class="game"><table><tr><td id="19td0"></td><td id="19td1"></td><td id="19td2"></td><td id="19td3"></td></tr><tr><td id="19td4"></td><td id="19td5"></td><td id="19td6"></td><td id="19td7"></td></tr><tr><td id="19td8"></td><td id="19td9"></td><td id="19td10"></td><td id="19td11"></td></tr><tr><td id="19td12"></td><td id="19td13"></td><td id="19td14"></td><td id="19td15"></td></tr></table><br/><span class="score" id="sc19"></span></div>
+    <br/>
+    <div class="game"><table><tr><td id="20td0"></td><td id="20td1"></td><td id="20td2"></td><td id="20td3"></td></tr><tr><td id="20td4"></td><td id="20td5"></td><td id="20td6"></td><td id="20td7"></td></tr><tr><td id="20td8"></td><td id="20td9"></td><td id="20td10"></td><td id="20td11"></td></tr><tr><td id="20td12"></td><td id="20td13"></td><td id="20td14"></td><td id="20td15"></td></tr></table><br/><span class="score" id="sc20"></span></div>
+    <div class="game"><table><tr><td id="21td0"></td><td id="21td1"></td><td id="21td2"></td><td id="21td3"></td></tr><tr><td id="21td4"></td><td id="21td5"></td><td id="21td6"></td><td id="21td7"></td></tr><tr><td id="21td8"></td><td id="21td9"></td><td id="21td10"></td><td id="21td11"></td></tr><tr><td id="21td12"></td><td id="21td13"></td><td id="21td14"></td><td id="21td15"></td></tr></table><br/><span class="score" id="sc21"></span></div>
+    <div class="game"><table><tr><td id="22td0"></td><td id="22td1"></td><td id="22td2"></td><td id="22td3"></td></tr><tr><td id="22td4"></td><td id="22td5"></td><td id="22td6"></td><td id="22td7"></td></tr><tr><td id="22td8"></td><td id="22td9"></td><td id="22td10"></td><td id="22td11"></td></tr><tr><td id="22td12"></td><td id="22td13"></td><td id="22td14"></td><td id="22td15"></td></tr></table><br/><span class="score" id="sc22"></span></div>
+    <div class="game"><table><tr><td id="23td0"></td><td id="23td1"></td><td id="23td2"></td><td id="23td3"></td></tr><tr><td id="23td4"></td><td id="23td5"></td><td id="23td6"></td><td id="23td7"></td></tr><tr><td id="23td8"></td><td id="23td9"></td><td id="23td10"></td><td id="23td11"></td></tr><tr><td id="23td12"></td><td id="23td13"></td><td id="23td14"></td><td id="23td15"></td></tr></table><br/><span class="score" id="sc23"></span></div>
+    <div class="game"><table><tr><td id="24td0"></td><td id="24td1"></td><td id="24td2"></td><td id="24td3"></td></tr><tr><td id="24td4"></td><td id="24td5"></td><td id="24td6"></td><td id="24td7"></td></tr><tr><td id="24td8"></td><td id="24td9"></td><td id="24td10"></td><td id="24td11"></td></tr><tr><td id="24td12"></td><td id="24td13"></td><td id="24td14"></td><td id="24td15"></td></tr></table><br/><span class="score" id="sc24"></span></div>
+    <div class="game"><table><tr><td id="25td0"></td><td id="25td1"></td><td id="25td2"></td><td id="25td3"></td></tr><tr><td id="25td4"></td><td id="25td5"></td><td id="25td6"></td><td id="25td7"></td></tr><tr><td id="25td8"></td><td id="25td9"></td><td id="25td10"></td><td id="25td11"></td></tr><tr><td id="25td12"></td><td id="25td13"></td><td id="25td14"></td><td id="25td15"></td></tr></table><br/><span class="score" id="sc25"></span></div>
+    <div class="game"><table><tr><td id="26td0"></td><td id="26td1"></td><td id="26td2"></td><td id="26td3"></td></tr><tr><td id="26td4"></td><td id="26td5"></td><td id="26td6"></td><td id="26td7"></td></tr><tr><td id="26td8"></td><td id="26td9"></td><td id="26td10"></td><td id="26td11"></td></tr><tr><td id="26td12"></td><td id="26td13"></td><td id="26td14"></td><td id="26td15"></td></tr></table><br/><span class="score" id="sc26"></span></div>
+    <div class="game"><table><tr><td id="27td0"></td><td id="27td1"></td><td id="27td2"></td><td id="27td3"></td></tr><tr><td id="27td4"></td><td id="27td5"></td><td id="27td6"></td><td id="27td7"></td></tr><tr><td id="27td8"></td><td id="27td9"></td><td id="27td10"></td><td id="27td11"></td></tr><tr><td id="27td12"></td><td id="27td13"></td><td id="27td14"></td><td id="27td15"></td></tr></table><br/><span class="score" id="sc27"></span></div>
+    <div class="game"><table><tr><td id="28td0"></td><td id="28td1"></td><td id="28td2"></td><td id="28td3"></td></tr><tr><td id="28td4"></td><td id="28td5"></td><td id="28td6"></td><td id="28td7"></td></tr><tr><td id="28td8"></td><td id="28td9"></td><td id="28td10"></td><td id="28td11"></td></tr><tr><td id="28td12"></td><td id="28td13"></td><td id="28td14"></td><td id="28td15"></td></tr></table><br/><span class="score" id="sc28"></span></div>
+    <div class="game"><table><tr><td id="29td0"></td><td id="29td1"></td><td id="29td2"></td><td id="29td3"></td></tr><tr><td id="29td4"></td><td id="29td5"></td><td id="29td6"></td><td id="29td7"></td></tr><tr><td id="29td8"></td><td id="29td9"></td><td id="29td10"></td><td id="29td11"></td></tr><tr><td id="29td12"></td><td id="29td13"></td><td id="29td14"></td><td id="29td15"></td></tr></table><br/><span class="score" id="sc29"></span></div>
+    <br/>
+    <div class="game"><table><tr><td id="30td0"></td><td id="30td1"></td><td id="30td2"></td><td id="30td3"></td></tr><tr><td id="30td4"></td><td id="30td5"></td><td id="30td6"></td><td id="30td7"></td></tr><tr><td id="30td8"></td><td id="30td9"></td><td id="30td10"></td><td id="30td11"></td></tr><tr><td id="30td12"></td><td id="30td13"></td><td id="30td14"></td><td id="30td15"></td></tr></table><br/><span class="score" id="sc30"></span></div>
+    <div class="game"><table><tr><td id="31td0"></td><td id="31td1"></td><td id="31td2"></td><td id="31td3"></td></tr><tr><td id="31td4"></td><td id="31td5"></td><td id="31td6"></td><td id="31td7"></td></tr><tr><td id="31td8"></td><td id="31td9"></td><td id="31td10"></td><td id="31td11"></td></tr><tr><td id="31td12"></td><td id="31td13"></td><td id="31td14"></td><td id="31td15"></td></tr></table><br/><span class="score" id="sc31"></span></div>
+    <div class="game"><table><tr><td id="32td0"></td><td id="32td1"></td><td id="32td2"></td><td id="32td3"></td></tr><tr><td id="32td4"></td><td id="32td5"></td><td id="32td6"></td><td id="32td7"></td></tr><tr><td id="32td8"></td><td id="32td9"></td><td id="32td10"></td><td id="32td11"></td></tr><tr><td id="32td12"></td><td id="32td13"></td><td id="32td14"></td><td id="32td15"></td></tr></table><br/><span class="score" id="sc32"></span></div>
+    <div class="game"><table><tr><td id="33td0"></td><td id="33td1"></td><td id="33td2"></td><td id="33td3"></td></tr><tr><td id="33td4"></td><td id="33td5"></td><td id="33td6"></td><td id="33td7"></td></tr><tr><td id="33td8"></td><td id="33td9"></td><td id="33td10"></td><td id="33td11"></td></tr><tr><td id="33td12"></td><td id="33td13"></td><td id="33td14"></td><td id="33td15"></td></tr></table><br/><span class="score" id="sc33"></span></div>
+    <div class="game"><table><tr><td id="34td0"></td><td id="34td1"></td><td id="34td2"></td><td id="34td3"></td></tr><tr><td id="34td4"></td><td id="34td5"></td><td id="34td6"></td><td id="34td7"></td></tr><tr><td id="34td8"></td><td id="34td9"></td><td id="34td10"></td><td id="34td11"></td></tr><tr><td id="34td12"></td><td id="34td13"></td><td id="34td14"></td><td id="34td15"></td></tr></table><br/><span class="score" id="sc34"></span></div>
+    <div class="game"><table><tr><td id="35td0"></td><td id="35td1"></td><td id="35td2"></td><td id="35td3"></td></tr><tr><td id="35td4"></td><td id="35td5"></td><td id="35td6"></td><td id="35td7"></td></tr><tr><td id="35td8"></td><td id="35td9"></td><td id="35td10"></td><td id="35td11"></td></tr><tr><td id="35td12"></td><td id="35td13"></td><td id="35td14"></td><td id="35td15"></td></tr></table><br/><span class="score" id="sc35"></span></div>
+    <div class="game"><table><tr><td id="36td0"></td><td id="36td1"></td><td id="36td2"></td><td id="36td3"></td></tr><tr><td id="36td4"></td><td id="36td5"></td><td id="36td6"></td><td id="36td7"></td></tr><tr><td id="36td8"></td><td id="36td9"></td><td id="36td10"></td><td id="36td11"></td></tr><tr><td id="36td12"></td><td id="36td13"></td><td id="36td14"></td><td id="36td15"></td></tr></table><br/><span class="score" id="sc36"></span></div>
+    <div class="game"><table><tr><td id="37td0"></td><td id="37td1"></td><td id="37td2"></td><td id="37td3"></td></tr><tr><td id="37td4"></td><td id="37td5"></td><td id="37td6"></td><td id="37td7"></td></tr><tr><td id="37td8"></td><td id="37td9"></td><td id="37td10"></td><td id="37td11"></td></tr><tr><td id="37td12"></td><td id="37td13"></td><td id="37td14"></td><td id="37td15"></td></tr></table><br/><span class="score" id="sc37"></span></div>
+    <div class="game"><table><tr><td id="38td0"></td><td id="38td1"></td><td id="38td2"></td><td id="38td3"></td></tr><tr><td id="38td4"></td><td id="38td5"></td><td id="38td6"></td><td id="38td7"></td></tr><tr><td id="38td8"></td><td id="38td9"></td><td id="38td10"></td><td id="38td11"></td></tr><tr><td id="38td12"></td><td id="38td13"></td><td id="38td14"></td><td id="38td15"></td></tr></table><br/><span class="score" id="sc38"></span></div>
+    <div class="game"><table><tr><td id="39td0"></td><td id="39td1"></td><td id="39td2"></td><td id="39td3"></td></tr><tr><td id="39td4"></td><td id="39td5"></td><td id="39td6"></td><td id="39td7"></td></tr><tr><td id="39td8"></td><td id="39td9"></td><td id="39td10"></td><td id="39td11"></td></tr><tr><td id="39td12"></td><td id="39td13"></td><td id="39td14"></td><td id="39td15"></td></tr></table><br/><span class="score" id="sc39"></span></div>
+    <br/>
+    <div class="game"><table><tr><td id="40td0"></td><td id="40td1"></td><td id="40td2"></td><td id="40td3"></td></tr><tr><td id="40td4"></td><td id="40td5"></td><td id="40td6"></td><td id="40td7"></td></tr><tr><td id="40td8"></td><td id="40td9"></td><td id="40td10"></td><td id="40td11"></td></tr><tr><td id="40td12"></td><td id="40td13"></td><td id="40td14"></td><td id="40td15"></td></tr></table><br/><span class="score" id="sc40"></span></div>
+    <div class="game"><table><tr><td id="41td0"></td><td id="41td1"></td><td id="41td2"></td><td id="41td3"></td></tr><tr><td id="41td4"></td><td id="41td5"></td><td id="41td6"></td><td id="41td7"></td></tr><tr><td id="41td8"></td><td id="41td9"></td><td id="41td10"></td><td id="41td11"></td></tr><tr><td id="41td12"></td><td id="41td13"></td><td id="41td14"></td><td id="41td15"></td></tr></table><br/><span class="score" id="sc41"></span></div>
+    <div class="game"><table><tr><td id="42td0"></td><td id="42td1"></td><td id="42td2"></td><td id="42td3"></td></tr><tr><td id="42td4"></td><td id="42td5"></td><td id="42td6"></td><td id="42td7"></td></tr><tr><td id="42td8"></td><td id="42td9"></td><td id="42td10"></td><td id="42td11"></td></tr><tr><td id="42td12"></td><td id="42td13"></td><td id="42td14"></td><td id="42td15"></td></tr></table><br/><span class="score" id="sc42"></span></div>
+    <div class="game"><table><tr><td id="43td0"></td><td id="43td1"></td><td id="43td2"></td><td id="43td3"></td></tr><tr><td id="43td4"></td><td id="43td5"></td><td id="43td6"></td><td id="43td7"></td></tr><tr><td id="43td8"></td><td id="43td9"></td><td id="43td10"></td><td id="43td11"></td></tr><tr><td id="43td12"></td><td id="43td13"></td><td id="43td14"></td><td id="43td15"></td></tr></table><br/><span class="score" id="sc43"></span></div>
+    <div class="game"><table><tr><td id="44td0"></td><td id="44td1"></td><td id="44td2"></td><td id="44td3"></td></tr><tr><td id="44td4"></td><td id="44td5"></td><td id="44td6"></td><td id="44td7"></td></tr><tr><td id="44td8"></td><td id="44td9"></td><td id="44td10"></td><td id="44td11"></td></tr><tr><td id="44td12"></td><td id="44td13"></td><td id="44td14"></td><td id="44td15"></td></tr></table><br/><span class="score" id="sc44"></span></div>
+    <div class="game"><table><tr><td id="45td0"></td><td id="45td1"></td><td id="45td2"></td><td id="45td3"></td></tr><tr><td id="45td4"></td><td id="45td5"></td><td id="45td6"></td><td id="45td7"></td></tr><tr><td id="45td8"></td><td id="45td9"></td><td id="45td10"></td><td id="45td11"></td></tr><tr><td id="45td12"></td><td id="45td13"></td><td id="45td14"></td><td id="45td15"></td></tr></table><br/><span class="score" id="sc45"></span></div>
+    <div class="game"><table><tr><td id="46td0"></td><td id="46td1"></td><td id="46td2"></td><td id="46td3"></td></tr><tr><td id="46td4"></td><td id="46td5"></td><td id="46td6"></td><td id="46td7"></td></tr><tr><td id="46td8"></td><td id="46td9"></td><td id="46td10"></td><td id="46td11"></td></tr><tr><td id="46td12"></td><td id="46td13"></td><td id="46td14"></td><td id="46td15"></td></tr></table><br/><span class="score" id="sc46"></span></div>
+    <div class="game"><table><tr><td id="47td0"></td><td id="47td1"></td><td id="47td2"></td><td id="47td3"></td></tr><tr><td id="47td4"></td><td id="47td5"></td><td id="47td6"></td><td id="47td7"></td></tr><tr><td id="47td8"></td><td id="47td9"></td><td id="47td10"></td><td id="47td11"></td></tr><tr><td id="47td12"></td><td id="47td13"></td><td id="47td14"></td><td id="47td15"></td></tr></table><br/><span class="score" id="sc47"></span></div>
+    <div class="game"><table><tr><td id="48td0"></td><td id="48td1"></td><td id="48td2"></td><td id="48td3"></td></tr><tr><td id="48td4"></td><td id="48td5"></td><td id="48td6"></td><td id="48td7"></td></tr><tr><td id="48td8"></td><td id="48td9"></td><td id="48td10"></td><td id="48td11"></td></tr><tr><td id="48td12"></td><td id="48td13"></td><td id="48td14"></td><td id="48td15"></td></tr></table><br/><span class="score" id="sc48"></span></div>
+    <div class="game"><table><tr><td id="49td0"></td><td id="49td1"></td><td id="49td2"></td><td id="49td3"></td></tr><tr><td id="49td4"></td><td id="49td5"></td><td id="49td6"></td><td id="49td7"></td></tr><tr><td id="49td8"></td><td id="49td9"></td><td id="49td10"></td><td id="49td11"></td></tr><tr><td id="49td12"></td><td id="49td13"></td><td id="49td14"></td><td id="49td15"></td></tr></table><br/><span class="score" id="sc49"></span></div>
+    <br/>
+    <div class="game"><table><tr><td id="50td0"></td><td id="50td1"></td><td id="50td2"></td><td id="50td3"></td></tr><tr><td id="50td4"></td><td id="50td5"></td><td id="50td6"></td><td id="50td7"></td></tr><tr><td id="50td8"></td><td id="50td9"></td><td id="50td10"></td><td id="50td11"></td></tr><tr><td id="50td12"></td><td id="50td13"></td><td id="50td14"></td><td id="50td15"></td></tr></table><br/><span class="score" id="sc50"></span></div>
+    <div class="game"><table><tr><td id="51td0"></td><td id="51td1"></td><td id="51td2"></td><td id="51td3"></td></tr><tr><td id="51td4"></td><td id="51td5"></td><td id="51td6"></td><td id="51td7"></td></tr><tr><td id="51td8"></td><td id="51td9"></td><td id="51td10"></td><td id="51td11"></td></tr><tr><td id="51td12"></td><td id="51td13"></td><td id="51td14"></td><td id="51td15"></td></tr></table><br/><span class="score" id="sc51"></span></div>
+    <div class="game"><table><tr><td id="52td0"></td><td id="52td1"></td><td id="52td2"></td><td id="52td3"></td></tr><tr><td id="52td4"></td><td id="52td5"></td><td id="52td6"></td><td id="52td7"></td></tr><tr><td id="52td8"></td><td id="52td9"></td><td id="52td10"></td><td id="52td11"></td></tr><tr><td id="52td12"></td><td id="52td13"></td><td id="52td14"></td><td id="52td15"></td></tr></table><br/><span class="score" id="sc52"></span></div>
+    <div class="game"><table><tr><td id="53td0"></td><td id="53td1"></td><td id="53td2"></td><td id="53td3"></td></tr><tr><td id="53td4"></td><td id="53td5"></td><td id="53td6"></td><td id="53td7"></td></tr><tr><td id="53td8"></td><td id="53td9"></td><td id="53td10"></td><td id="53td11"></td></tr><tr><td id="53td12"></td><td id="53td13"></td><td id="53td14"></td><td id="53td15"></td></tr></table><br/><span class="score" id="sc53"></span></div>
+    <div class="game"><table><tr><td id="54td0"></td><td id="54td1"></td><td id="54td2"></td><td id="54td3"></td></tr><tr><td id="54td4"></td><td id="54td5"></td><td id="54td6"></td><td id="54td7"></td></tr><tr><td id="54td8"></td><td id="54td9"></td><td id="54td10"></td><td id="54td11"></td></tr><tr><td id="54td12"></td><td id="54td13"></td><td id="54td14"></td><td id="54td15"></td></tr></table><br/><span class="score" id="sc54"></span></div>
+    <div class="game"><table><tr><td id="55td0"></td><td id="55td1"></td><td id="55td2"></td><td id="55td3"></td></tr><tr><td id="55td4"></td><td id="55td5"></td><td id="55td6"></td><td id="55td7"></td></tr><tr><td id="55td8"></td><td id="55td9"></td><td id="55td10"></td><td id="55td11"></td></tr><tr><td id="55td12"></td><td id="55td13"></td><td id="55td14"></td><td id="55td15"></td></tr></table><br/><span class="score" id="sc55"></span></div>
+    <div class="game"><table><tr><td id="56td0"></td><td id="56td1"></td><td id="56td2"></td><td id="56td3"></td></tr><tr><td id="56td4"></td><td id="56td5"></td><td id="56td6"></td><td id="56td7"></td></tr><tr><td id="56td8"></td><td id="56td9"></td><td id="56td10"></td><td id="56td11"></td></tr><tr><td id="56td12"></td><td id="56td13"></td><td id="56td14"></td><td id="56td15"></td></tr></table><br/><span class="score" id="sc56"></span></div>
+    <div class="game"><table><tr><td id="57td0"></td><td id="57td1"></td><td id="57td2"></td><td id="57td3"></td></tr><tr><td id="57td4"></td><td id="57td5"></td><td id="57td6"></td><td id="57td7"></td></tr><tr><td id="57td8"></td><td id="57td9"></td><td id="57td10"></td><td id="57td11"></td></tr><tr><td id="57td12"></td><td id="57td13"></td><td id="57td14"></td><td id="57td15"></td></tr></table><br/><span class="score" id="sc57"></span></div>
+    <div class="game"><table><tr><td id="58td0"></td><td id="58td1"></td><td id="58td2"></td><td id="58td3"></td></tr><tr><td id="58td4"></td><td id="58td5"></td><td id="58td6"></td><td id="58td7"></td></tr><tr><td id="58td8"></td><td id="58td9"></td><td id="58td10"></td><td id="58td11"></td></tr><tr><td id="58td12"></td><td id="58td13"></td><td id="58td14"></td><td id="58td15"></td></tr></table><br/><span class="score" id="sc58"></span></div>
+    <div class="game"><table><tr><td id="59td0"></td><td id="59td1"></td><td id="59td2"></td><td id="59td3"></td></tr><tr><td id="59td4"></td><td id="59td5"></td><td id="59td6"></td><td id="59td7"></td></tr><tr><td id="59td8"></td><td id="59td9"></td><td id="59td10"></td><td id="59td11"></td></tr><tr><td id="59td12"></td><td id="59td13"></td><td id="59td14"></td><td id="59td15"></td></tr></table><br/><span class="score" id="sc59"></span></div>
+    <!--
+    <button onClick="move(0)">up</button>
+    <br/>
+    <button onClick="move(2)">left</button>
+    <button onClick="move(3)">right</button>
+    <br/>
+    <button onClick="move(1)">down</button>
+    <br/>
+    <input type=text id="stat" />
+-->
+    <div class="container">
+      <div class="row">
+        <svg class="draw" width="1000px" height="1000px"/>
+      </div>
+    </div>
+    <script>
+// transformation matrices.
+var players = 20;
+var xform = [ [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ],   // Up
+              [ 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 ],   // Down
+              [ 0,4,8,12,1,5,9,13,2,6,10,14,3,7,11,15 ],   // Left
+              [ 15,11,7,3,14,10,6,2,13,9,5,1,12,8,4,0 ] ]; // Right
+var gameboard =[ [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ] ];
+var empty     =[ [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ] ];
+var playing = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+var PRNG = [];
+
+function rotateHue(h) {
+    var r, g, b, i, f, p, q, t;
+    h = (16-Math.log2(h))/16;
+    s = 0.5;
+    v = 1;
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return ("rgb("+Math.round(r*255).toString()+","+
+      Math.round(g*255).toString()+","+Math.round(b*255).toString()+")");
+}
+
+function randpop(p,a) {
+  return(a.splice(Math.floor(PRNG[p].uniform()*(a.length)),1));
+}
+
+function display(p) {
+  for (var i=0;i<16;i++) {
+    var tile = document.getElementById(p.toString()+"td"+i.toString());
+    if (! gameboard[p][i]) {
+      tile.innerHTML = '';
+      tile.style.backgroundColor = "#BBB";
+    } else {
+      tile.innerHTML = gameboard[p][i].toString();
+      tile.style.backgroundColor = rotateHue(gameboard[p][i]);
+    }
+  }
+  document.getElementById("sc"+p.toString()).innerText = "Score: " +neat.population[p].score.toString();
+  setTimeout(function(){nextturn(p)},50);
+}
+
+function move(p,d) {
+  var c=0;
+  var mlock = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+  for (var i=4;i<8;i++) {
+    if ( gameboard[p][xform[d][i]] ) {
+      if (! gameboard[p][xform[d][i-4]]) {
+        gameboard[p][xform[d][i-4]]=gameboard[p][xform[d][i]];
+        gameboard[p][xform[d][i]]=0;
+        c++;
+      } else if (gameboard[p][xform[d][i-4]] === gameboard[p][xform[d][i]]) {
+        gameboard[p][xform[d][i-4]]*=2;
+        gameboard[p][xform[d][i]]=0;
+        neat.population[p].score += gameboard[p][xform[d][i-4]];
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=8;i<12;i++) {
+    if ( gameboard[p][xform[d][i]] ) {
+      if (! gameboard[p][xform[d][i-4]]) {
+        if (! gameboard[p][xform[d][i-8]]) {
+          gameboard[p][xform[d][i-8]]=gameboard[p][xform[d][i]];
+          gameboard[p][xform[d][i]]=0;
+          c++;
+        } else if (gameboard[p][xform[d][i-8]] === gameboard[p][xform[d][i]] && ! mlock[i-8]) {
+          gameboard[p][xform[d][i-8]]*=2;
+          gameboard[p][xform[d][i]]=0;
+          neat.population[p].score += gameboard[p][xform[d][i-8]];
+          mlock[i-8]++;
+          c++;
+        } else {
+          gameboard[p][xform[d][i-4]]=gameboard[p][xform[d][i]];
+          gameboard[p][xform[d][i]]=0;
+          c++;
+        }
+      } else if (gameboard[p][xform[d][i-4]] === gameboard[p][xform[d][i]] && ! mlock[i-4]) {
+        gameboard[p][xform[d][i-4]]*=2;
+        gameboard[p][xform[d][i]]=0;
+        neat.population[p].score += gameboard[p][xform[d][i-4]];
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=12;i<16;i++) {
+    if ( gameboard[p][xform[d][i]] ) {
+      if (! gameboard[p][xform[d][i-4]]) {
+        if (! gameboard[p][xform[d][i-8]]) {
+          if (! gameboard[p][xform[d][i-12]]) {
+            gameboard[p][xform[d][i-12]]=gameboard[p][xform[d][i]];
+            gameboard[p][xform[d][i]]=0;
+            c++;
+          } else if (gameboard[p][xform[d][i-12]] === gameboard[p][xform[d][i]] && ! mlock[i-12]) {
+            gameboard[p][xform[d][i-12]]*=2;
+            gameboard[p][xform[d][i]]=0;
+            neat.population[p].score += gameboard[p][xform[d][i-12]];
+            mlock[i-12]++;
+            c++;
+          } else {
+            gameboard[p][xform[d][i-8]]=gameboard[p][xform[d][i]];
+            gameboard[p][xform[d][i]]=0;
+            c++;
+          }
+        } else if (gameboard[p][xform[d][i-8]] === gameboard[p][xform[d][i]] && ! mlock[i-8]) {
+          gameboard[p][xform[d][i-8]]*=2;
+          gameboard[p][xform[d][i]]=0;
+          neat.population[p].score += gameboard[p][xform[d][i-8]];
+          mlock[i-8]++;
+          c++;
+        } else {
+          gameboard[p][xform[d][i-4]]=gameboard[p][xform[d][i]];
+          gameboard[p][xform[d][i]]=0;
+          c++;
+        }
+      } else if (gameboard[p][xform[d][i-4]] === gameboard[p][xform[d][i]] && ! mlock[i-4]) {
+        gameboard[p][xform[d][i-4]]*=2;
+        gameboard[p][xform[d][i]]=0;
+        neat.population[p].score += gameboard[p][xform[d][i-4]];
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  empty[p] = [];
+  for (var i=0;i<16;i++) { 
+    if (!gameboard[p][i]) {
+      empty[p].push(i);
+    }
+  }
+  if (c) { 
+    playing[p] = 1;
+    gameboard[p][randpop(p,empty[p])] = (Math.floor(PRNG[p].uniform()*2)+1)*2; 
+    display(p);
+  } else {
+    playing[p]++;
+    if (playing[p] >= 5) {
+//      gameboard[p].sort(function(a, b){return b - a});
+//      neat.population[p].score += gameboard[p][0]+gameboard[p][1];
+      playing[p] = 0;
+      document.getElementById("sc"+p).style.backgroundColor = "#f99";
+    }
+    if (! Math.max(...playing)) { endEval(); } else {
+      if (playing[p]) {
+        display(p);
+      }
+    }
+  }
+}
+
+function trymove(d,gb,mt) {
+  var c=0;
+  var mlock = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+  for (var i=4;i<8;i++) {
+    if ( gb[xform[d][i]] ) {
+      if (! gb[xform[d][i-4]]) {
+        gb[xform[d][i-4]]=gb[xform[d][i]];
+        gb[xform[d][i]]=0;
+        c++;
+      } else if (gb[xform[d][i-4]] === gb[xform[d][i]]) {
+        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=8;i<12;i++) {
+    if ( gb[xform[d][i]] ) {
+      if (! gb[xform[d][i-4]]) {
+        if (! gb[xform[d][i-8]]) {
+          gb[xform[d][i-8]]=gb[xform[d][i]];
+          gb[xform[d][i]]=0;
+          c++;
+        } else if (gb[xform[d][i-8]] === gb[xform[d][i]] && ! mlock[i-8]) {
+          gb[xform[d][i-8]]*=2;
+          gb[xform[d][i]]=0;
+          mlock[i-8]++;
+          c++;
+        } else {
+          gb[xform[d][i-4]]=gb[xform[d][i]];
+          gb[xform[d][i]]=0;
+          c++;
+        }
+      } else if (gb[xform[d][i-4]] === gb[xform[d][i]] && ! mlock[i-4]) {
+        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=12;i<16;i++) {
+    if ( gb[xform[d][i]] ) {
+      if (! gb[xform[d][i-4]]) {
+        if (! gb[xform[d][i-8]]) {
+          if (! gb[xform[d][i-12]]) {
+            gb[xform[d][i-12]]=gb[xform[d][i]];
+            gb[xform[d][i]]=0;
+            c++;
+          } else if (gb[xform[d][i-12]] === gb[xform[d][i]] && ! mlock[i-12]) {
+            gb[xform[d][i-12]]*=2;
+            gb[xform[d][i]]=0;
+            mlock[i-12]++;
+            c++;
+          } else {
+            gb[xform[d][i-8]]=gb[xform[d][i]];
+            gb[xform[d][i]]=0;
+            c++;
+          }
+        } else if (gb[xform[d][i-8]] === gb[xform[d][i]] && ! mlock[i-8]) {
+          gb[xform[d][i-8]]*=2;
+          gb[xform[d][i]]=0;
+          mlock[i-8]++;
+          c++;
+        } else {
+          gb[xform[d][i-4]]=gb[xform[d][i]];
+          gb[xform[d][i]]=0;
+          c++;
+        }
+      } else if (gb[xform[d][i-4]] === gb[xform[d][i]] && ! mlock[i-4]) {
+        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  mt.length = 0;
+  for (var i=0;i<16;i++) { 
+    if (!gb[i]) {
+      mt.push(i);
+    }
+  }
+  return(c);
+}
+
+function startgame(p) {
+  gameboard[p] = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+  empty[p]     = [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ];
+
+  neat.population[p].score = 0;
+  playing[p] = 1;
+  gameboard[p][randpop(p,empty[p])] = (Math.floor(PRNG[p].uniform()*2)+1)*2;
+  gameboard[p][randpop(p,empty[p])] = (Math.floor(PRNG[p].uniform()*2)+1)*2;
+  display(p);
+}
+
+function nextturn(p) {
+  brain = neat.population[p];
+
+  //brain.score += 1;
+  var out = brain.activate(gameboard[p]);
+  var z = Math.max(...out);
+  if (out[0] == z) {
+    move(p,0);
+  } else if (out[1] == z) {
+    move(p,2);
+  } else if (out[2] == z) {
+    move(p,1);
+  } else {
+    move(p,3);
+  }
+}
+
+function endEval() {
+  if (neat.getFittest().score > hiscore) {
+    hiscore = neat.getFittest().score;
+    document.getElementById("hxsc").innerText = hiscore.toString()+ " (Gen: "+neat.generation+")";
+  }
+  document.getElementById("genx").innerText = neat.generation;
+  document.getElementById("hisc").innerText = neat.getFittest().score;
+  document.getElementById("avsc").innerText = neat.getAverage();
+  //drawGraph(neat.getFittest().graph(1000,1000), '.draw');
+  neat.sort();
+  var newPopulation = [];
+
+/*  // Elitism
+  for(var i = 0; i < neat.elitism; i++){
+    newPopulation.push(neat.getFittest());
+  }
+
+  // Breed the next individuals
+  for(var i = 0; i < neat.popsize - neat.elitism; i++){
+    newPopulation.push(neat.getOffspring());
+  }
+*/
+  // Elitism
+  for(var i = 0; i < neat.elitism; i++){
+    newPopulation[i] = neat.population[i];
+  }
+
+  // Breed the next individuals
+  for(var i = neat.elitism; i < neat.popsize; i++){
+    newPopulation[i] = neat.getOffspring();
+  }
+
+  // Replace the old population with the new population
+  neat.population = newPopulation;
+  neat.mutate();
+
+  neat.generation++;
+  startEval();
+}
+
+HEIGHT = 1000;
+var neat = new neataptic.Neat(16,4,null, {
+    popsize: 60,
+    elitism: 0,
+    mutationRate: 0.5,
+    mutation: [
+      neataptic.methods.mutation.ADD_NODE,
+      neataptic.methods.mutation.SUB_NODE,
+      neataptic.methods.mutation.ADD_CONN,
+      neataptic.methods.mutation.SUB_CONN,
+      neataptic.methods.mutation.MOD_WEIGHT,
+      neataptic.methods.mutation.MOD_BIAS,
+      neataptic.methods.mutation.MOD_ACTIVATION,
+      neataptic.methods.mutation.ADD_GATE,
+      neataptic.methods.mutation.SUB_GATE,
+      neataptic.methods.mutation.ADD_SELF_CONN,
+      neataptic.methods.mutation.SUB_SELF_CONN,
+      neataptic.methods.mutation.ADD_BACK_CONN,
+      neataptic.methods.mutation.SUB_BACK_CONN
+    ],
+    network: new neataptic.architect.Random(16,20,4),
+    });
+var hiscore = 0;
+console.log(neat.elitism);
+
+//neat.import(opop);
+
+function startEval() {
+  var seed = Date();
+  seed = '1';
+
+  for (var i=0;i<neat.popsize;i++) {
+    document.getElementById("sc"+i).style.backgroundColor = "#fff";
+    PRNG[i] = new RNG(seed);
+    startgame(i);
+  }
+}
+
+startEval();
+    </script>
+  </body>
+</html>
+

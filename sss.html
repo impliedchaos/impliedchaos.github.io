@@ -1,0 +1,159 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Sine Bobs!</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; }
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        Initial Momentum: <span id="ilabel"></span><br/>
+        Current Momentum: <span id="clabel"></span><br/>
+		<script type="text/javascript"> 
+
+function Ball() {
+  this.x = 0;
+  this.y = 0;
+  this.sx = 0;
+  this.sy = 0;
+  this.size = 10;
+  this.mass = 10;
+  this.color = "rgba(255,255,255,0.5)";
+}
+
+var canvas, canvas2, context, image, data, context2;
+var balls = [];
+var WIDTH = 800;
+var HEIGHT = 800;
+var BALLCOUNT = 20;
+ 
+init();
+setInterval(loop, 1000 / 60);
+
+function init() {
+  var container;
+
+  container = document.getElementById('container');
+ 
+  canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.style.width = WIDTH + "px";
+  canvas.style.height = HEIGHT + "px";
+  container.appendChild(canvas);
+ 
+  context = canvas.getContext("2d");
+  context.fillStyle = "rgb(0, 0, 0)";
+  context.fillRect (0, 0, WIDTH, HEIGHT);
+  image = context.getImageData(0, 0, WIDTH, HEIGHT);
+  data = image.data;
+
+  canvas2 = document.createElement("canvas");
+  canvas2.width = WIDTH;
+  canvas2.height = HEIGHT;
+  context2 = canvas2.getContext("2d");
+
+  for (var i = 0; i < BALLCOUNT; i++) {
+    balls[i] = new Ball();
+    balls[i].x = Math.random() * WIDTH;
+    balls[i].y = Math.random() * HEIGHT;
+    balls[i].sx = Math.random() * 10 - 5;
+    balls[i].sy = Math.random() * 10 - 5;
+    balls[i].size = Math.random() * 30 + 10;
+    balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.5)";
+  }
+  document.getElementById('ilabel').innerHTML = energy();
+}
+ 
+function loop() {
+  // Clear the buffer;
+  context2.fillStyle="rgba(0,0,0,1)";
+  context2.fillRect(0,0,WIDTH,HEIGHT);
+
+  // Boundary collision
+  for (var i = 0; i < balls.length; i++) {
+    if (((balls[i].x - balls[i].size < 0) && (balls[i].sx < 0)) ||
+        ((balls[i].x + balls[i].size > WIDTH) && balls[i].sx > 0)) {
+      balls[i].sx *= -1;
+    }
+    if (((balls[i].y - balls[i].size < 0) && (balls[i].sy < 0)) ||
+        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].sy > 0)) {
+      balls[i].sy *= -1;
+    }
+  }
+  
+  // Ball collision
+  for (var i = 0; i < balls.length - 1; i++) {
+    for (var j = i + 1; j < balls.length; j++) {
+      if ((Math.pow(balls[i].x - balls[j].x,2) + Math.pow(balls[i].y - balls[j].y,2)) <= Math.pow(balls[i].size + balls[j].size,2)) {
+        // Collision
+        var nx = balls[j].x - balls[i].x;
+        var ny = balls[j].y - balls[i].y;
+        var nc = Math.sqrt(nx*nx + ny*ny);
+        nx /= nc;
+        ny /= nc;
+
+        // Skip if they're already moving away.
+        if ((balls[j].sx - balls[i].sx) * nx + (balls[j].sy - balls[i].sy) * ny > 0) { continue; }
+
+        var m1 = balls[i].size * Math.PI * Math.PI;
+        var m2 = balls[j].size * Math.PI * Math.PI;
+
+        var x1 = balls[i].sx * nx + balls[i].sy * ny;
+        var v1xx = nx * x1;
+        var v1xy = ny * x1;
+        var v1yx = balls[i].sx - v1xx;
+        var v1yy = balls[i].sy - v1xy;
+
+        nx *= -1;
+        ny *= -1;
+
+        var x2 = balls[j].sx * nx + balls[j].sy * ny;
+        var v2xx = nx * x2;
+        var v2xy = ny * x2;
+        var v2yx = balls[j].sx - v2xx;
+        var v2yy = balls[j].sy - v2xy;
+
+        balls[i].sx = (v1xx * ((m1 - m2) / (m1 + m2)) + (v2xx * ((2 * m2) / (m1 + m2)))) + v1yx;
+        balls[i].sy = (v1xy * ((m1 - m2) / (m1 + m2)) + (v2xy * ((2 * m2) / (m1 + m2)))) + v1yy;
+        balls[j].sx = (v1xx * ((2 * m1) / (m1 + m2)) + (v2xx * ((m2 - m1) / (m1 + m2)))) + v2yx;
+        balls[j].sy = (v1xy * ((2 * m1) / (m1 + m2)) + (v2xy * ((m2 - m1) / (m1 + m2)))) + v2yy;
+      }
+    }
+  }
+  for (var i = 0; i < balls.length; i++) {
+    balls[i].x += balls[i].sx;
+    balls[i].y += balls[i].sy;
+    context2.fillStyle=balls[i].color;
+    context2.beginPath();
+    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size,0,Math.PI*2,true);
+    context2.fill();
+  }
+
+//             var dURL = canvas.toDataURL();
+//             document.getElementById("savestate").src = dURL;
+
+  context.drawImage(canvas2,0,0,WIDTH,HEIGHT);
+  document.getElementById('clabel').innerHTML = energy();
+}
+
+function energy() {
+  var momentum = 0;
+  for (var i = 0; i < balls.length; i++) {
+    momentum += balls[i].size * Math.PI * Math.PI * Math.sqrt(balls[i].sx*balls[i].sx+balls[i].sy*balls[i].sy);
+  }
+  return momentum;
+}
+		</script> 
+	</body> 
+</html> 
+

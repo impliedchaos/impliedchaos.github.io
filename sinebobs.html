@@ -1,0 +1,315 @@
+<!doctype html> 
+<html> 
+	<head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Sine Bobs!</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 0px; overflow: hidden; }
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:center; }
+            #container canvas { border:0px solid #777; }
+            div { text-align:center; }
+		</style> 
+	</head> 
+	<body> 
+      <br/>
+		<div id="container"></div> 
+        <div>
+        <span id="rlabel"></span><br/>
+        Speed: <input id="sinp" type="range" min="1" max="15" value="5" /><span id="speed">5</span><br/>
+        Angle: <input id="ainp" type="range" min="45" max="225" step="45" value="135" /><span id="angle">135</span><br/>
+        <button onclick="bw=!bw;">Color/BW</button><br/>
+        </div>
+		
+		<script type="text/javascript"> 
+			var WIDTH, HEIGHT,
+            canvas, canvas2, canvas3,
+			context, image, data, context2, context3;
+            var rot1 = 0;
+            var rot2 = 90;
+            var speed = 5;
+            var bw = 0;
+ 
+			init();
+			setInterval(loop, 1000 / 60);
+
+			function init() {
+				var container;
+
+                WIDTH = 360;
+                HEIGHT = 360;
+				
+				container = document.getElementById('container');
+ 
+				canvas = document.createElement("canvas");
+				canvas.width = WIDTH;
+				canvas.height = HEIGHT;
+				canvas.style.width = WIDTH + "px";
+				canvas.style.height = HEIGHT + "px";
+//				canvas.style.width = window.innerWidth + "px";
+//				canvas.style.height = window.innerHeight + "px";
+				container.appendChild(canvas);
+ 
+				context = canvas.getContext("2d");
+				context.fillStyle = "rgb(0, 0, 0)";
+				context.fillRect (0, 0, WIDTH, HEIGHT);
+				image = context.getImageData(0, 0, WIDTH, HEIGHT);
+				data = image.data;
+
+				canvas2 = document.createElement("canvas");
+				canvas2.width = WIDTH*1.05;
+                canvas2.height = HEIGHT*1.05;
+				context2 = canvas2.getContext("2d");
+
+				canvas3 = document.createElement("canvas");
+				canvas3.width = WIDTH;
+                canvas3.height = HEIGHT;
+				context3 = canvas3.getContext("2d");
+			}
+ 
+			function loop() {
+              var ds, sx, sy;
+              speed = Math.floor(document.getElementById("sinp").value);
+              rot2 = Math.floor(document.getElementById("ainp").value);
+              document.getElementById("rlabel").innerHTML=rot1;
+              document.getElementById("angle").innerHTML=rot2;
+              document.getElementById("speed").innerHTML=speed;
+
+              rot1 = (rot1 + speed) % 720;
+              context2.drawImage(canvas,0,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
+              context3.drawImage(canvas2,0,0,WIDTH,HEIGHT,0,0,WIDTH,HEIGHT);
+              context3.fillStyle="rgba(0,0,0,0.3)";
+              context3.fillRect(0,0,WIDTH,HEIGHT);
+
+              ds = Math.sin(rot1 * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5  - ds) - 6;
+              sx = Math.floor(WIDTH * 0.5) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(255,0,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 8) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds) - 6;
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(0,255,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 - ds * 0.92388) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds * 0.38268) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(255,85,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 9) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds * 0.92388) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds * 0.38268) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(0,169,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+
+              ds = Math.sin((rot1 + rot2 * 2) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 - ds * 0.70711) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds * 0.70711) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(255,169,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 10) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds * 0.70711) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds * 0.70711) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(0,85,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+
+              ds = Math.sin((rot1 + rot2 * 3) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 - ds * 0.38268) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds * 0.92388) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(255,255,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 11) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds * 0.38268) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds * 0.92388) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(0,0,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 4) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(169,255,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 12) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(85,0,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 5) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds * 0.38268 ) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds * 0.92388 ) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(85,255,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 13) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 - ds * 0.38268 ) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds * 0.92388 ) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(169,0,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 6) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds * 0.70711 ) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds * 0.70711 ) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(0,255,0,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 14) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 - ds * 0.70711 ) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds * 0.70711 ) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(255,0,255,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 7) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 + ds * 0.92388 ) - 6;
+              sx = Math.floor(WIDTH * 0.5 + ds * 0.38268 ) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(0,255,128,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+              ds = Math.sin((rot1 + rot2 * 15) * Math.PI / 360) * (WIDTH * 0.2) + WIDTH * 0.25;
+              sy = Math.floor(HEIGHT * 0.5 - ds * 0.92388 ) - 6;
+              sx = Math.floor(WIDTH * 0.5 - ds * 0.38268 ) - 6;
+
+              if (bw) {
+                context3.fillStyle="rgba(255,255,255,1)";
+              } else {
+                context3.fillStyle="rgba(255,0,128,1)";
+              }
+              context3.beginPath();
+              context3.moveTo(sx+6,sy+6);
+              context3.arc(sx+6,sy+6,6,0,Math.PI*2,true);
+              context3.fill();
+
+
+              context.drawImage(canvas3,0,0,WIDTH,HEIGHT);
+			}
+		</script> 
+	</body> 
+</html> 
+

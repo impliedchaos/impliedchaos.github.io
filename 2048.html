@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>2048</title>
+    <script src="https://wagenaartje.github.io/neataptic/cdn/1.4.7/neataptic.js"></script>
+    <style>
+td { width: 80px; height: 80px; background-color: #BBB; font-family: sans-serif; font-size: 28px; text-align: center;}
+    </style>
+  </head>
+  <body>
+    <table>
+      <tr>
+        <td id="td0"></td>
+        <td id="td1"></td>
+        <td id="td2"></td>
+        <td id="td3"></td>
+      </tr>
+      <tr>
+        <td id="td4"></td>
+        <td id="td5"></td>
+        <td id="td6"></td>
+        <td id="td7"></td>
+      </tr>
+      <tr>
+        <td id="td8"></td>
+        <td id="td9"></td>
+        <td id="td10"></td>
+        <td id="td11"></td>
+      </tr>
+      <tr>
+        <td id="td12"></td>
+        <td id="td13"></td>
+        <td id="td14"></td>
+        <td id="td15"></td>
+      </tr>
+    </table>
+    <button onClick="move(0)">up</button>
+    <br/>
+    <button onClick="move(2)">left</button>
+    <button onClick="move(3)">right</button>
+    <br/>
+    <button onClick="move(1)">down</button>
+    <br/>
+    <input type=text id="stat" />
+    <script>
+// transformation matrices.
+var xform = [ [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ],   // Up
+              [ 15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0 ],   // Down
+              [ 0,4,8,12,1,5,9,13,2,6,10,14,3,7,11,15 ],   // Left
+              [ 15,11,7,3,14,10,6,2,13,9,5,1,12,8,4,0 ] ]; // Right
+var gameboard = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+var empty     = [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ];
+
+function rotateHue(h) {
+    var r, g, b, i, f, p, q, t;
+    h = (16-Math.log2(h))/16;
+    s = 0.5;
+    v = 1;
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return ("rgb("+Math.round(r*255).toString()+","+
+      Math.round(g*255).toString()+","+Math.round(b*255).toString()+")");
+}
+
+function randpop(a) {
+  return(a.splice(Math.floor(Math.random()*(a.length)),1));
+}
+
+function display() {
+  for (var i=0;i<16;i++) {
+    var tile = document.getElementById("td"+i.toString());
+    if (! gameboard[i]) {
+      tile.innerHTML = '';
+      tile.style.backgroundColor = "#BBB";
+    } else {
+      tile.innerHTML = gameboard[i].toString();
+      tile.style.backgroundColor = rotateHue(gameboard[i]);
+    }
+  }
+  lookahead();
+}
+
+function move(d) {
+  var c=0;
+  var mlock = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+  for (var i=4;i<8;i++) {
+    if ( gameboard[xform[d][i]] ) {
+      if (! gameboard[xform[d][i-4]]) {
+        gameboard[xform[d][i-4]]=gameboard[xform[d][i]];
+        gameboard[xform[d][i]]=0;
+        c++;
+      } else if (gameboard[xform[d][i-4]] === gameboard[xform[d][i]]) {
+        gameboard[xform[d][i-4]]*=2;
+        gameboard[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=8;i<12;i++) {
+    if ( gameboard[xform[d][i]] ) {
+      if (! gameboard[xform[d][i-4]]) {
+        if (! gameboard[xform[d][i-8]]) {
+          gameboard[xform[d][i-8]]=gameboard[xform[d][i]];
+          gameboard[xform[d][i]]=0;
+          c++;
+        } else if (gameboard[xform[d][i-8]] === gameboard[xform[d][i]] && ! mlock[i-8]) {
+          gameboard[xform[d][i-8]]*=2;
+          gameboard[xform[d][i]]=0;
+          mlock[i-8]++;
+          c++;
+        } else {
+          gameboard[xform[d][i-4]]=gameboard[xform[d][i]];
+          gameboard[xform[d][i]]=0;
+          c++;
+        }
+      } else if (gameboard[xform[d][i-4]] === gameboard[xform[d][i]] && ! mlock[i-4]) {
+        gameboard[xform[d][i-4]]*=2;
+        gameboard[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=12;i<16;i++) {
+    if ( gameboard[xform[d][i]] ) {
+      if (! gameboard[xform[d][i-4]]) {
+        if (! gameboard[xform[d][i-8]]) {
+          if (! gameboard[xform[d][i-12]]) {
+            gameboard[xform[d][i-12]]=gameboard[xform[d][i]];
+            gameboard[xform[d][i]]=0;
+            c++;
+          } else if (gameboard[xform[d][i-12]] === gameboard[xform[d][i]] && ! mlock[i-12]) {
+            gameboard[xform[d][i-12]]*=2;
+            gameboard[xform[d][i]]=0;
+            mlock[i-12]++;
+            c++;
+          } else {
+            gameboard[xform[d][i-8]]=gameboard[xform[d][i]];
+            gameboard[xform[d][i]]=0;
+            c++;
+          }
+        } else if (gameboard[xform[d][i-8]] === gameboard[xform[d][i]] && ! mlock[i-8]) {
+          gameboard[xform[d][i-8]]*=2;
+          gameboard[xform[d][i]]=0;
+          mlock[i-8]++;
+          c++;
+        } else {
+          gameboard[xform[d][i-4]]=gameboard[xform[d][i]];
+          gameboard[xform[d][i]]=0;
+          c++;
+        }
+      } else if (gameboard[xform[d][i-4]] === gameboard[xform[d][i]] && ! mlock[i-4]) {
+        gameboard[xform[d][i-4]]*=2;
+        gameboard[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  empty = [];
+  for (var i=0;i<16;i++) { 
+    if (!gameboard[i]) {
+      empty.push(i);
+    }
+  }
+  if (c) { gameboard[randpop(empty)] = (Math.floor(Math.random()*2)+1)*2; }
+  display();
+}
+
+function trymove(d,gb,mt) {
+  var c=0;
+  var mlock = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+  for (var i=4;i<8;i++) {
+    if ( gb[xform[d][i]] ) {
+      if (! gb[xform[d][i-4]]) {
+        gb[xform[d][i-4]]=gb[xform[d][i]];
+        gb[xform[d][i]]=0;
+        c++;
+      } else if (gb[xform[d][i-4]] === gb[xform[d][i]]) {
+        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=8;i<12;i++) {
+    if ( gb[xform[d][i]] ) {
+      if (! gb[xform[d][i-4]]) {
+        if (! gb[xform[d][i-8]]) {
+          gb[xform[d][i-8]]=gb[xform[d][i]];
+          gb[xform[d][i]]=0;
+          c++;
+        } else if (gb[xform[d][i-8]] === gb[xform[d][i]] && ! mlock[i-8]) {
+          gb[xform[d][i-8]]*=2;
+          gb[xform[d][i]]=0;
+          mlock[i-8]++;
+          c++;
+        } else {
+          gb[xform[d][i-4]]=gb[xform[d][i]];
+          gb[xform[d][i]]=0;
+          c++;
+        }
+      } else if (gb[xform[d][i-4]] === gb[xform[d][i]] && ! mlock[i-4]) {
+        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  for (var i=12;i<16;i++) {
+    if ( gb[xform[d][i]] ) {
+      if (! gb[xform[d][i-4]]) {
+        if (! gb[xform[d][i-8]]) {
+          if (! gb[xform[d][i-12]]) {
+            gb[xform[d][i-12]]=gb[xform[d][i]];
+            gb[xform[d][i]]=0;
+            c++;
+          } else if (gb[xform[d][i-12]] === gb[xform[d][i]] && ! mlock[i-12]) {
+            gb[xform[d][i-12]]*=2;
+            gb[xform[d][i]]=0;
+            mlock[i-12]++;
+            c++;
+          } else {
+            gb[xform[d][i-8]]=gb[xform[d][i]];
+            gb[xform[d][i]]=0;
+            c++;
+          }
+        } else if (gb[xform[d][i-8]] === gb[xform[d][i]] && ! mlock[i-8]) {
+          gb[xform[d][i-8]]*=2;
+          gb[xform[d][i]]=0;
+          mlock[i-8]++;
+          c++;
+        } else {
+          gb[xform[d][i-4]]=gb[xform[d][i]];
+          gb[xform[d][i]]=0;
+          c++;
+        }
+      } else if (gb[xform[d][i-4]] === gb[xform[d][i]] && ! mlock[i-4]) {
+        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i]]=0;
+        mlock[i-4]++;
+        c++;
+      }
+    }
+  }
+  mt.length = 0;
+  for (var i=0;i<16;i++) { 
+    if (!gb[i]) {
+      mt.push(i);
+    }
+  }
+  return(c);
+}
+
+function score(gb,mt) {
+  return(Math.max(...gb)*mt.length);
+}
+
+Array.prototype.average = function () { var sum = 0, j = 0; for (var i = 0; i < this.length, isFinite(this[i]); i++) { sum += parseFloat(this[i]); ++j; } return j ? sum / j : 0; };
+
+function lookahead() {
+  var boards = [];
+  var emptys = [];
+  var scores = [];
+  for (var i=0;i<4;i++) {
+    boards[i] = gameboard.slice();
+    emptys[i] = empty.slice();
+    if ( trymove(i,boards[i],emptys[i]) ) {
+      scores[i] = score(boards[i],emptys[i]);
+      las = [];
+      for (var k=0; k < emptys.length; k++) {
+        for (var l=0; l < 2; l++) {
+          for (var m=0; m < 4; m++) {
+            var tb = boards[i].slice();
+            var te = emptys[i].slice();
+            tb[te[k]] = (l+1)*2;
+            if (trymove(m,tb,te)) {
+              var sc = score(tb,te);
+              las.push(sc);
+            } else {
+             // las.push(0);
+            }
+          }
+        }
+      }
+      scores[i] += Math.floor(las.average());
+    } else {
+      scores[i] = 0;
+    }
+  }
+//  console.log(scores);
+  var mx = Math.max(...scores);
+//  mx = 0;
+  if (mx) {
+    if (scores[0] == mx) {
+      move(0);
+    } else if (scores[2] == mx) {
+      move(2);
+    } else if (scores[1] == mx) {
+      move(1);
+    } else {
+      move(3);
+    }
+  }
+}
+
+function startgame() {
+  gameboard = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
+  empty     = [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ];
+
+  gameboard[randpop(empty)] = (Math.floor(Math.random()*2)+1)*2;
+  gameboard[randpop(empty)] = (Math.floor(Math.random()*2)+1)*2;
+  display();
+}
+
+startgame();
+
+// Map arrow keys to movement.
+document.onkeydown = function (event) {
+  key = event.key;
+  if (key == "ArrowUp") {
+    move(0);
+  } else if (key == "ArrowDown") {
+    move(1);
+  } else if (key == "ArrowLeft") {
+    move(2);
+  } else if (key == "ArrowRight") {
+    move(3);
+  }
+}
+    </script>
+  </body>
+</html>
+
