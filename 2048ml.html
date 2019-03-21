@@ -414,7 +414,7 @@ function endEval() {
   
   // Brand New Random genomes to keep the gene pool fresh.
   for(var i = neat.popsize - 2; i < neat.popsize; i++) {
-    newPopulation[i] = neataptic.architect.network.Random(16,16+Math.floor(Math.random()*10),4);
+    newPopulation[i] = neataptic.architect.Random(16,16+Math.floor(Math.random()*10),4);
   }
 
   // Replace the old population with the new population
