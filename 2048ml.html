@@ -2,7 +2,7 @@
 <html>
   <head>
     <title>2048</title>
-    <script src="pop.js"></script>
+    <script src="2048training.js"></script>
     <script src="http://d3js.org/d3.v3.min.js"></script>
     <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
     <script src="https://wagenaartje.github.io/neataptic/cdn/1.4.7/neataptic.js"></script>
@@ -452,6 +452,13 @@ var hiscore = 0;
 console.log(neat.elitism);
 
 //neat.import(opop);
+      
+neat.population[0].train(trainingData, {
+  log: 10,
+  error: 0.03,
+  iterations: 1000,
+  rate: 0.3
+});
 
 function startEval() {
   var seed = Date();
