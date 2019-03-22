@@ -452,14 +452,15 @@ var hiscore = 0;
 console.log(neat.elitism);
 
 //neat.import(opop);
-      
-neat.population[0].train(trainingData, {
+for (var i=0; i<neat.popsize; i++) {
+console.log(neat.population[i].train(trainingData, {
   log: 10,
   error: 0.03,
   iterations: 1000,
   rate: 0.3
-});
-
+}));
+}
+      
 function startEval() {
   var seed = Date();
   seed = '1';
