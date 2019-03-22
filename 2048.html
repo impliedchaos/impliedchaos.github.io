@@ -304,7 +304,7 @@ function lookahead() {
   }
 //  console.log(scores);
   var mx = Math.max(...scores);
-//  mx = 0;
+  mx = 0;
   if (mx) {
     if (scores[0] == mx) {
       move(0);
@@ -329,16 +329,22 @@ function startgame() {
 
 startgame();
 
+      var trainingData = [];
+      
 // Map arrow keys to movement.
 document.onkeydown = function (event) {
   key = event.key;
   if (key == "ArrowUp") {
+    trainingData.push({input: gameboard, output: [1,0,0,0]});
     move(0);
   } else if (key == "ArrowDown") {
+    trainingData.push({input: gameboard, output: [0,1,0,0]});
     move(1);
   } else if (key == "ArrowLeft") {
+    trainingData.push({input: gameboard, output: [0,0,1,0]});
     move(2);
   } else if (key == "ArrowRight") {
+    trainingData.push({input: gameboard, output: [0,0,0,1]});
     move(3);
   }
 }
