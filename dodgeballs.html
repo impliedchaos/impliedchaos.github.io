@@ -291,7 +291,15 @@ function doEval() {
 */
   var newPopulation = [];
   var noMutation = [];
-
+  
+  for (var i = neat.popsize - 1; i >= 0; i--) {
+    if (neat.population[i].badStreak == 599) {
+	    neat.population.splice(i,1);
+    }
+  }
+  for (var i = neat.population.length; i< neat.popsize; i++) {
+    newPopulation.push(neataptic.architect.Random(BALLCOUNT * 5 + 4,10,2));
+  }
   // Elitism
   for(var i = 0; i < neat.elitism; i++){
     noMutation.push(neat.population[i]);
