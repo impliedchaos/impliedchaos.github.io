@@ -301,12 +301,8 @@ function doEval() {
 	    neat.population.splice(i,1);
     }
   }
-  var pl = neat.population.length;
+	
   for (var i = neat.population.length; i< neat.popsize; i++) {
-    if (pl) {
-	    var o=copyObj(neat.population[0]);
-	    neat.population[i] = o;
-    } else {
     neat.population.push(neataptic.architect.Random(BALLCOUNT * 5 + 4,10,2));
     neat.population[i].score = -50000;
     }
