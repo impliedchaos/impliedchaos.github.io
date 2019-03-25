@@ -305,7 +305,7 @@ function doEval() {
   for (var i = neat.population.length; i< neat.popsize; i++) {
     if (pl) {
 	    var o=copyObj(neat.population[0]);
-	    neat.population.push(o);
+	    neat.population[i] = o;
     } else {
     neat.population.push(neataptic.architect.Random(BALLCOUNT * 5 + 4,10,2));
     neat.population[i].score = -50000;
