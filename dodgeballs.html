@@ -305,7 +305,6 @@ function doEval() {
   for (var i = neat.population.length; i< neat.popsize; i++) {
     neat.population.push(neataptic.architect.Random(BALLCOUNT * 5 + 4,10,2));
     neat.population[i].score = -50000;
-    }
   }
   // Elitism
   for(var i = 0; i < neat.elitism; i++){
