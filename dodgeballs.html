@@ -1,0 +1,340 @@
+<!DOCTYPE html> 
+<html> 
+    <head> 
+		<meta charset="utf-8"> 
+        <!-- <meta name="viewport" content="initial-scale=1.0; maximum-scale=1.0; user-scalable=0;"/> -->
+		<title>Elastic Balls</title> 
+		<style type="text/css"> 
+			body { background-color: #444; color: #CCC; margin: 5px; overflow: hidden; font-family: monospace;}
+			#info { top: 0px; width: 100%; color: #777; padding: 5px; text-align:center; }
+            #container { text-align:left; }
+            #container canvas { border:0px solid #777; }
+            .container { float: right; }
+            div { text-align:center; }
+		</style> 
+        <script src="http://d3js.org/d3.v3.min.js"></script>
+        <script src="http://marvl.infotech.monash.edu/webcola/cola.v3.min.js"></script>
+        <script src="https://wagenaartje.github.io/neataptic/cdn/1.4.7/neataptic.js"></script>
+        <script src="https://rawgit.com/wagenaartje/neataptic/master/graph/graph.js"></script>
+        <script src="https://rawgit.com/skeeto/rng-js/master/rng.js"></script>
+        <link rel="stylesheet" type="text/css" href="https://rawgit.com/wagenaartje/neataptic/master/graph/graph.css">
+	</head> 
+	<body> 
+        <div class="container">
+            <div class="row">
+                <svg class="draw" width="1000px" height="1000px"/>
+            </div>
+        </div>
+      <br/>
+        <h3>Generation: <span id="genx">.</span></h1>
+        <h3>High Score: <span id="hisc">.</span></h2>
+        <h3>Mean Score: <span id="avsc">.</span></h2>
+        <h2>Highest Score: <span id="hxsc">.</span></h2>
+		<div id="container"></div> 
+        <button onClick="duplicateSpazzes = 1;">replicate spazzes</button>
+        
+		<script type="text/javascript"> 
+
+function notifyDave(str) {
+   var output = { text: str };
+   var webhookURL = "https://hooks.slack.com/services/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";
+   var slack = new XMLHttpRequest();
+   slack.open("POST", webhookURL);
+   slack.send(JSON.stringify(output));
+}
+
+function Ball() {
+  this.x = 0;
+  this.y = 0;
+  this.sx = 0;
+  this.sy = 0;
+  this.size = 10;
+  this.mass = 10;
+  this.color = "rgba(255,255,255,0.5)";
+}
+
+function Player() {
+  this.x = WIDTH/2;
+  this.y = HEIGHT/2;
+  this.sx = 0;
+  this.sy = 0;
+  this.size = 20;
+  this.color = "rgba(255,255,255,0.25)";
+}
+
+var duplicateSpazzes = 0;
+var canvas, canvas2, context, image, data, context2;
+var balls = [];
+var players = [];
+var WIDTH = 400;
+var HEIGHT = 400;
+var MAXDIST = (WIDTH*WIDTH+HEIGHT*HEIGHT);
+var BALLCOUNT = 8;
+var PLAYERS = 120;
+var counter = 0;
+var neat = new neataptic.Neat(BALLCOUNT * 5 + 4,2,null, {
+    popsize: PLAYERS,
+    elitism: 10,
+    provenance: 10,
+    mutationRate: 0.5,
+    equal: false,
+    mutation: [
+      neataptic.methods.mutation.ADD_NODE,
+      neataptic.methods.mutation.SUB_NODE,
+      neataptic.methods.mutation.ADD_CONN,
+      neataptic.methods.mutation.SUB_CONN,
+      neataptic.methods.mutation.MOD_WEIGHT,
+      neataptic.methods.mutation.MOD_BIAS,
+      neataptic.methods.mutation.MOD_ACTIVATION,
+      neataptic.methods.mutation.ADD_GATE,
+      neataptic.methods.mutation.SUB_GATE,
+      neataptic.methods.mutation.ADD_SELF_CONN,
+      neataptic.methods.mutation.SUB_SELF_CONN,
+      neataptic.methods.mutation.ADD_BACK_CONN,
+      neataptic.methods.mutation.SUB_BACK_CONN
+    ],
+    network: new neataptic.architect.Random(BALLCOUNT * 5 + 4,10,2),
+    });
+var hiscore = 0;
+
+neat.mutate();
+init();
+
+function init() {
+  var container;
+
+  container = document.getElementById('container');
+ 
+  canvas = document.createElement("canvas");
+  canvas.width = WIDTH;
+  canvas.height = HEIGHT;
+  canvas.style.width = WIDTH + "px";
+  canvas.style.height = HEIGHT + "px";
+  container.appendChild(canvas);
+ 
+  context = canvas.getContext("2d");
+  context.fillStyle = "rgb(0, 0, 0)";
+  context.fillRect (0, 0, WIDTH, HEIGHT);
+  image = context.getImageData(0, 0, WIDTH, HEIGHT);
+  data = image.data;
+
+  canvas2 = document.createElement("canvas");
+  canvas2.width = WIDTH;
+  canvas2.height = HEIGHT;
+  context2 = canvas2.getContext("2d");
+
+  for (var i = 0; i < BALLCOUNT; i++) {
+    balls[i] = new Ball();
+    balls[i].x = Math.random() * WIDTH;
+    balls[i].y = Math.random() * HEIGHT;
+    balls[i].sx = Math.random() * 10 - 5;
+    balls[i].sy = Math.random() * 10 - 5;
+    balls[i].size = Math.random() * 30 + 10;
+    balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.9)";
+  }
+
+  for (var i=0; i < PLAYERS; i++) {
+    players[i] = new Player();
+    neat.population[i].score = 0;
+    neat.population[i].lastoutput = [ 0 ];
+    neat.population[i].badStreak = 0;
+  }
+    
+  setTimeout(loop, 1000 / 60);
+}
+ 
+function loop() {
+  // Clear the buffer;
+  context2.fillStyle="rgba(0,0,0,1)";
+  context2.fillRect(0,0,WIDTH,HEIGHT);
+
+  // Boundary collision
+  for (var i = 0; i < balls.length; i++) {
+    if (((balls[i].x - balls[i].size < 0) && (balls[i].sx < 0)) ||
+        ((balls[i].x + balls[i].size > WIDTH) && balls[i].sx > 0)) {
+      balls[i].sx *= -1;
+    }
+    if (((balls[i].y - balls[i].size < 0) && (balls[i].sy < 0)) ||
+        ((balls[i].y + balls[i].size > HEIGHT) && balls[i].sy > 0)) {
+      balls[i].sy *= -1;
+    }
+  }
+  
+  // Ball collision --- Slowly steps through each pair of balls.
+  for (var i = 0; i < balls.length - 1; i++) {
+    for (var j = i + 1; j < balls.length; j++) {
+      if ((Math.pow(balls[i].x - balls[j].x,2) + Math.pow(balls[i].y - balls[j].y,2)) <= Math.pow(balls[i].size + balls[j].size,2)) {
+        // Collision Detected
+
+        // Determine Unit Normal Velocity.
+        var unx = balls[j].x - balls[i].x;
+        var uny = balls[j].y - balls[i].y;
+        var nc = Math.sqrt(unx*unx + uny*uny);
+        unx /= nc;
+        uny /= nc;
+
+        // Skip if they're already moving away from each other.
+        if ((balls[j].sx - balls[i].sx) * unx + (balls[j].sy - balls[i].sy) * uny > 0) { continue; }
+
+        // Unit Tangenital Velocity.
+        var utx = uny * -1;
+        var uty = unx;
+
+        var v1n = unx * balls[i].sx + uny * balls[i].sy;
+        var v1t = utx * balls[i].sx + uty * balls[i].sy;
+        var v2n = unx * balls[j].sx + uny * balls[j].sy;
+        var v2t = utx * balls[j].sx + uty * balls[j].sy;
+
+        // We're using the circle's area as the ball's mass.
+        var m1 = balls[i].size * balls[i].size * Math.PI;
+        var m2 = balls[j].size * balls[j].size * Math.PI;
+
+        var vv1n = (v1n * (m1 - m2) + 2 * m2 * v2n) / (m1 + m2);
+        var vv2n = (v2n * (m2 - m1) + 2 * m1 * v1n) / (m1 + m2);
+
+        balls[i].sx = unx * vv1n + utx * v1t;
+        balls[i].sy = uny * vv1n + uty * v1t;
+        balls[j].sx = unx * vv2n + utx * v2t;
+        balls[j].sy = uny * vv2n + uty * v2t;
+      }
+    }
+  }
+  // Draw the balls.
+  for (var i = 0; i < balls.length; i++) {
+    balls[i].x += balls[i].sx;
+    balls[i].y += balls[i].sy;
+    context2.fillStyle=balls[i].color;
+    context2.beginPath();
+    context2.arc(Math.floor(balls[i].x),Math.floor(balls[i].y),balls[i].size,0,Math.PI*2,true);
+    context2.fill();
+  }
+
+  for (var i=0; i<players.length; i++) {
+    var collide = 0;
+    var input = [];
+    for (var j = 0; j < balls.length; j++) {
+      if ((Math.pow(players[i].x - balls[j].x,2) + Math.pow(players[i].y - balls[j].y,2)) <= Math.pow(players[i].size + balls[j].size,2)) {
+        collide++;
+        input.push(balls[j].x/WIDTH,balls[j].y/HEIGHT,balls[j].sx/200+0.5,balls[j].sy/200+0.5,0);
+      } else {
+        dist = Math.pow(players[i].x - balls[j].x,2) + Math.pow(players[i].y - balls[j].y,2) - Math.pow(players[i].size + balls[j].size,2);
+        dist /= MAXDIST;
+        input.push(balls[j].x/WIDTH,balls[j].y/HEIGHT,balls[j].sx/200+0.5,balls[j].sy/200+0.5,dist);
+      }
+    }
+    if (collide) {
+      neat.population[i].score -= collide * 10;
+    } else {
+      neat.population[i].score++;
+    }
+    input.push(players[i].x/WIDTH,players[i].y/HEIGHT,players[i].sx/200+0.5,players[i].sy/200+0.5);
+    var output = neat.population[i].activate(input);
+    if (neat.population[i].lastoutput.length == 2) {
+      if (output[0] == neat.population[i].lastoutput[0] && output[1] == neat.population[i].lastoutput[1]) { neat.population[i].badStreak++}
+      if (neat.population[i].badStreak) { neat.population[i].score -= neat.population[i].badStreak; }
+    } else {
+      neat.population[i].badStreak = 0;
+    }
+    neat.population[i].lastoutput = output.slice();
+    players[i].sx += Math.sin(output[0]*Math.PI*2)*(output[1]*5);
+    players[i].sy += Math.cos(output[0]*Math.PI*2)*(output[1]*5);
+    if (players[i].sx > 20) { players[i].sx = 20; }
+    if (players[i].sy > 20) { players[i].sy = 20; }
+    if (players[i].sx < -10) { players[i].sx = -10; }
+    if (players[i].sy < -10) { players[i].sy = -10; }
+    if (players[i].sx == 0 && players[i].sy == 0) { neat.population[i].score--; }
+    players[i].x += players[i].sx;
+    players[i].y += players[i].sy;
+    if (players[i].x - players[i].size < 0) { players[i].x = 0 + players[i].size; players[i].sx *= -1; players[i].sy *= -1; neat.population[i].score--;}
+    if (players[i].y - players[i].size < 0) { players[i].y = 0 + players[i].size; players[i].sx *= -1; players[i].sy *= -1; neat.population[i].score--;}
+    if (players[i].x + players[i].size > WIDTH) { players[i].x = WIDTH - players[i].size; players[i].sx *= -1; players[i].sy *= -1; neat.population[i].score--;}
+    if (players[i].y + players[i].size > HEIGHT) { players[i].y = HEIGHT - players[i].size; players[i].sx *= -1; players[i].sy *= -1; neat.population[i].score--;}
+    context2.fillStyle=players[i].color;
+    context2.beginPath();
+    context2.arc(Math.floor(players[i].x),Math.floor(players[i].y),players[i].size,0,Math.PI*2,true);
+    context2.fill();
+  }
+
+  // Page flip to the on-screen canvas.  Is page-flipping even necessary?
+  // Old frame buffer habits die hard.
+  context.drawImage(canvas2,0,0,WIDTH,HEIGHT);
+
+  ++counter;
+  if (counter < 60*10) {
+     setTimeout(loop, 1000 / 60);
+  } else {
+     counter = 0;
+     doEval();
+  }
+}
+
+function doEval() {
+  if (duplicateSpazzes) {
+  }
+  console.log(neat.population[0].badStreak);
+    
+  neat.sort();
+
+  if (neat.population[0].score > hiscore) {
+    hiscore = neat.population[0].score;
+    document.getElementById("hxsc").innerText = hiscore.toString()+ " (Gen: "+neat.generation+")";
+    notifyDave("New High Score: "+hiscore.toString()+" (Generation: "+neat.generation+")");
+  }
+  document.getElementById("genx").innerText = neat.generation;
+  document.getElementById("hisc").innerText = neat.population[0].score;
+  document.getElementById("avsc").innerText = neat.getAverage();
+  drawGraph(neat.population[0].graph(1000,1000), '.draw');
+/*
+  for(var i = 0; i < neat.popsize; i++) {
+    neat.population[i].clear();
+  }
+*/
+  var newPopulation = [];
+  var noMutation = [];
+
+  // Elitism
+  for(var i = 0; i < neat.elitism; i++){
+    noMutation.push(neat.population[i]);
+  }
+
+  // Breed the next individuals
+  for(var i = 0; i < neat.provenance; i++){
+    noMutation.push(neat.getOffspring());
+  }
+  
+  // Brand New Random genomes to keep the gene pool fresh.
+  for(var i = 0; i < neat.popsize - neat.elitism - neat.provenance; i++) {
+    newPopulation.push(neataptic.architect.Random(BALLCOUNT * 5 + 4,10,2));
+  }
+
+  // Replace the old population with the new population
+  neat.population = newPopulation;
+  neat.mutate();
+  neat.population.unshift(...noMutation);
+  noMutation = [];
+
+  neat.generation++;
+  for (var i = 0; i < BALLCOUNT; i++) {
+    balls[i] = new Ball();
+    balls[i].x = Math.random() * WIDTH;
+    balls[i].y = Math.random() * HEIGHT;
+    balls[i].sx = Math.random() * 10 - 5;
+    balls[i].sy = Math.random() * 10 - 5;
+    balls[i].size = Math.random() * 30 + 10;
+    balls[i].color = "rgba("+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+","+Math.floor(Math.random()*127+128)+",0.9)";
+  }
+  for(var i=0;i<neat.popsize;i++) {
+     neat.population[i].score = 0;
+     neat.population[i].lastoutput = [0];
+     neat.population[i].badStreak = 0;
+     players[i].x = WIDTH/2;
+     players[i].y = HEIGHT/2;
+     players[i].sx = 0;
+     players[i].sy = 0;
+  }
+  loop();
+}
+		</script> 
+	</body> 
+</html> 
+

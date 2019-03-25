@@ -12,7 +12,7 @@
     <link rel="stylesheet" type="text/css" href="https://rawgit.com/wagenaartje/neataptic/master/graph/graph.css">
     <style>
 body { font-family: sans-serif; }
-table { display: inline-block; border: 1px solid #666; }
+table { display: inline-block; border: 1px solid #666; background-color: #777; }
 td { width: 20px; height: 20px; background-color: #BBB; font-size: 8px; text-align: center;}
 .score { font-size: 8px; }
 .game { display: inline-block; font-size: 8px;}
@@ -23,7 +23,6 @@ td { width: 20px; height: 20px; background-color: #BBB; font-size: 8px; text-ali
     <h2>High Score: <span id="hisc">.</span></h2>
     <h2>Mean Score: <span id="avsc">.</span></h2>
     <h1>Highest Score: <span id="hxsc">.</span></h2>
-    <div id="gamedisplay">
     <div class="game"><table><tr><td id="0td0"></td><td id="0td1"></td><td id="0td2"></td><td id="0td3"></td></tr><tr><td id="0td4"></td><td id="0td5"></td><td id="0td6"></td><td id="0td7"></td></tr><tr><td id="0td8"></td><td id="0td9"></td><td id="0td10"></td><td id="0td11"></td></tr><tr><td id="0td12"></td><td id="0td13"></td><td id="0td14"></td><td id="0td15"></td></tr></table><br/><span class="score" id="sc0"></span></div>
     <div class="game"><table><tr><td id="1td0"></td><td id="1td1"></td><td id="1td2"></td><td id="1td3"></td></tr><tr><td id="1td4"></td><td id="1td5"></td><td id="1td6"></td><td id="1td7"></td></tr><tr><td id="1td8"></td><td id="1td9"></td><td id="1td10"></td><td id="1td11"></td></tr><tr><td id="1td12"></td><td id="1td13"></td><td id="1td14"></td><td id="1td15"></td></tr></table><br/><span class="score" id="sc1"></span></div>
     <div class="game"><table><tr><td id="2td0"></td><td id="2td1"></td><td id="2td2"></td><td id="2td3"></td></tr><tr><td id="2td4"></td><td id="2td5"></td><td id="2td6"></td><td id="2td7"></td></tr><tr><td id="2td8"></td><td id="2td9"></td><td id="2td10"></td><td id="2td11"></td></tr><tr><td id="2td12"></td><td id="2td13"></td><td id="2td14"></td><td id="2td15"></td></tr></table><br/><span class="score" id="sc2"></span></div>
@@ -89,8 +88,6 @@ td { width: 20px; height: 20px; background-color: #BBB; font-size: 8px; text-ali
     <div class="game"><table><tr><td id="57td0"></td><td id="57td1"></td><td id="57td2"></td><td id="57td3"></td></tr><tr><td id="57td4"></td><td id="57td5"></td><td id="57td6"></td><td id="57td7"></td></tr><tr><td id="57td8"></td><td id="57td9"></td><td id="57td10"></td><td id="57td11"></td></tr><tr><td id="57td12"></td><td id="57td13"></td><td id="57td14"></td><td id="57td15"></td></tr></table><br/><span class="score" id="sc57"></span></div>
     <div class="game"><table><tr><td id="58td0"></td><td id="58td1"></td><td id="58td2"></td><td id="58td3"></td></tr><tr><td id="58td4"></td><td id="58td5"></td><td id="58td6"></td><td id="58td7"></td></tr><tr><td id="58td8"></td><td id="58td9"></td><td id="58td10"></td><td id="58td11"></td></tr><tr><td id="58td12"></td><td id="58td13"></td><td id="58td14"></td><td id="58td15"></td></tr></table><br/><span class="score" id="sc58"></span></div>
     <div class="game"><table><tr><td id="59td0"></td><td id="59td1"></td><td id="59td2"></td><td id="59td3"></td></tr><tr><td id="59td4"></td><td id="59td5"></td><td id="59td6"></td><td id="59td7"></td></tr><tr><td id="59td8"></td><td id="59td9"></td><td id="59td10"></td><td id="59td11"></td></tr><tr><td id="59td12"></td><td id="59td13"></td><td id="59td14"></td><td id="59td15"></td></tr></table><br/><span class="score" id="sc59"></span></div>
-    </div>
-    <button onClick="showDisplayToggle()">Display Toggle</button>
     <!--
     <button onClick="move(0)">up</button>
     <br/>
@@ -116,12 +113,13 @@ var xform = [ [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ],   // Up
 var gameboard =[ [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ] ];
 var empty     =[ [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ] ];
 var playing = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+var traindata = [];
 var PRNG = [];
 
 function rotateHue(h) {
     var r, g, b, i, f, p, q, t;
     h = (16-Math.log2(h))/16;
-    s = 0.5;
+    s = 0.45;
     v = 1;
     i = Math.floor(h * 6);
     f = h * 6 - i;
@@ -145,18 +143,18 @@ function randpop(p,a) {
 }
 
 function display(p) {
-    for (var i=0;i<16;i++) {
-      var tile = document.getElementById(p.toString()+"td"+i.toString());
-      if (! gameboard[p][i]) {
-        tile.innerHTML = '';
-        tile.style.backgroundColor = "#BBB";
-      } else {
-        tile.innerHTML = gameboard[p][i].toString();
-        tile.style.backgroundColor = rotateHue(gameboard[p][i]);
-      }
+  for (var i=0;i<16;i++) {
+    var tile = document.getElementById(p.toString()+"td"+i.toString());
+    if (! gameboard[p][i]) {
+      tile.innerHTML = '';
+      tile.style.backgroundColor = "#BBB";
+    } else {
+      tile.innerHTML = Math.pow(2,gameboard[p][i]);
+      tile.style.backgroundColor = rotateHue(Math.pow(2,gameboard[p][i]));
     }
-    document.getElementById("sc"+p.toString()).innerText = "Score: " +neat.population[p].score.toString();
-    setTimeout(function(){nextturn(p)},50);
+  }
+  document.getElementById("sc"+p.toString()).innerText = "Score: " +neat.population[p].score.toString();
+  setTimeout(function(){nextturn(p)},50);
 }
 
 function move(p,d) {
@@ -169,9 +167,9 @@ function move(p,d) {
         gameboard[p][xform[d][i]]=0;
         c++;
       } else if (gameboard[p][xform[d][i-4]] === gameboard[p][xform[d][i]]) {
-        gameboard[p][xform[d][i-4]]*=2;
+        gameboard[p][xform[d][i-4]]++;
         gameboard[p][xform[d][i]]=0;
-        neat.population[p].score += gameboard[p][xform[d][i-4]];
+        neat.population[p].score += Math.pow(2,gameboard[p][xform[d][i-4]]);
         mlock[i-4]++;
         c++;
       }
@@ -185,9 +183,9 @@ function move(p,d) {
           gameboard[p][xform[d][i]]=0;
           c++;
         } else if (gameboard[p][xform[d][i-8]] === gameboard[p][xform[d][i]] && ! mlock[i-8]) {
-          gameboard[p][xform[d][i-8]]*=2;
+          gameboard[p][xform[d][i-8]]++;
           gameboard[p][xform[d][i]]=0;
-          neat.population[p].score += gameboard[p][xform[d][i-8]];
+          neat.population[p].score += Math.pow(2,gameboard[p][xform[d][i-8]]);
           mlock[i-8]++;
           c++;
         } else {
@@ -196,9 +194,9 @@ function move(p,d) {
           c++;
         }
       } else if (gameboard[p][xform[d][i-4]] === gameboard[p][xform[d][i]] && ! mlock[i-4]) {
-        gameboard[p][xform[d][i-4]]*=2;
+        gameboard[p][xform[d][i-4]]++;
         gameboard[p][xform[d][i]]=0;
-        neat.population[p].score += gameboard[p][xform[d][i-4]];
+        neat.population[p].score += Math.pow(2,gameboard[p][xform[d][i-4]]);
         mlock[i-4]++;
         c++;
       }
@@ -213,9 +211,9 @@ function move(p,d) {
             gameboard[p][xform[d][i]]=0;
             c++;
           } else if (gameboard[p][xform[d][i-12]] === gameboard[p][xform[d][i]] && ! mlock[i-12]) {
-            gameboard[p][xform[d][i-12]]*=2;
+            gameboard[p][xform[d][i-12]]++;
             gameboard[p][xform[d][i]]=0;
-            neat.population[p].score += gameboard[p][xform[d][i-12]];
+            neat.population[p].score += Math.pow(2,gameboard[p][xform[d][i-12]]);
             mlock[i-12]++;
             c++;
           } else {
@@ -224,9 +222,9 @@ function move(p,d) {
             c++;
           }
         } else if (gameboard[p][xform[d][i-8]] === gameboard[p][xform[d][i]] && ! mlock[i-8]) {
-          gameboard[p][xform[d][i-8]]*=2;
+          gameboard[p][xform[d][i-8]]++;
           gameboard[p][xform[d][i]]=0;
-          neat.population[p].score += gameboard[p][xform[d][i-8]];
+          neat.population[p].score += Math.pow(2,gameboard[p][xform[d][i-8]]);
           mlock[i-8]++;
           c++;
         } else {
@@ -235,9 +233,9 @@ function move(p,d) {
           c++;
         }
       } else if (gameboard[p][xform[d][i-4]] === gameboard[p][xform[d][i]] && ! mlock[i-4]) {
-        gameboard[p][xform[d][i-4]]*=2;
+        gameboard[p][xform[d][i-4]]++;
         gameboard[p][xform[d][i]]=0;
-        neat.population[p].score += gameboard[p][xform[d][i-4]];
+        neat.population[p].score += Math.pow(2,gameboard[p][xform[d][i-4]]);
         mlock[i-4]++;
         c++;
       }
@@ -255,23 +253,11 @@ function move(p,d) {
     display(p);
   } else {
     playing[p]++;
-    neat.population[p].score -= 2;
-    neat.population[p].fuckup += 2;
     if (playing[p] >= 5) {
-      gameboard[p].sort(function(a, b){return b - a});
-      neat.population[p].score += gameboard[p][0]+gameboard[p][1];
-      neat.population[p].bonus += gameboard[p][0]+gameboard[p][1];
+//      gameboard[p].sort(function(a, b){return b - a});
+//      neat.population[p].score += gameboard[p][0]+gameboard[p][1];
       playing[p] = 0;
       document.getElementById("sc"+p).style.backgroundColor = "#f99";
-      if (! empty[p].length ) {
-        s = lookahead(p);
-        if (! Math.max(...s)) {
-          neat.population[p].score += 50;
-          neat.population[p].bonus += 50;
-         document.getElementById("sc"+p).style.backgroundColor = "#9f9";
-        }
-      }
-
     }
     if (! Math.max(...playing)) { endEval(); } else {
       if (playing[p]) {
@@ -279,26 +265,6 @@ function move(p,d) {
       }
     }
   }
-}
-
-function score(gb,mt) {
-  return(Math.max(...gb)*mt.length);
-}
-
-function lookahead(p) {
-  var boards = [];
-  var emptys = [];
-  var scores = [];
-  for (var i=0;i<4;i++) {
-    boards[i] = gameboard[p].slice();
-    emptys[i] = empty[p].slice();
-    if ( trymove(i,boards[i],emptys[i]) ) {
-      scores[i] = score(boards[i],emptys[i]);
-    } else {
-      scores[i] = 0;
-    }
-  }
-  return(scores);
 }
 
 function trymove(d,gb,mt) {
@@ -311,7 +277,7 @@ function trymove(d,gb,mt) {
         gb[xform[d][i]]=0;
         c++;
       } else if (gb[xform[d][i-4]] === gb[xform[d][i]]) {
-        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i-4]]++;
         gb[xform[d][i]]=0;
         mlock[i-4]++;
         c++;
@@ -326,7 +292,7 @@ function trymove(d,gb,mt) {
           gb[xform[d][i]]=0;
           c++;
         } else if (gb[xform[d][i-8]] === gb[xform[d][i]] && ! mlock[i-8]) {
-          gb[xform[d][i-8]]*=2;
+          gb[xform[d][i-8]]++;
           gb[xform[d][i]]=0;
           mlock[i-8]++;
           c++;
@@ -336,7 +302,7 @@ function trymove(d,gb,mt) {
           c++;
         }
       } else if (gb[xform[d][i-4]] === gb[xform[d][i]] && ! mlock[i-4]) {
-        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i-4]]++;
         gb[xform[d][i]]=0;
         mlock[i-4]++;
         c++;
@@ -352,7 +318,7 @@ function trymove(d,gb,mt) {
             gb[xform[d][i]]=0;
             c++;
           } else if (gb[xform[d][i-12]] === gb[xform[d][i]] && ! mlock[i-12]) {
-            gb[xform[d][i-12]]*=2;
+            gb[xform[d][i-12]]++;
             gb[xform[d][i]]=0;
             mlock[i-12]++;
             c++;
@@ -362,7 +328,7 @@ function trymove(d,gb,mt) {
             c++;
           }
         } else if (gb[xform[d][i-8]] === gb[xform[d][i]] && ! mlock[i-8]) {
-          gb[xform[d][i-8]]*=2;
+          gb[xform[d][i-8]]++;
           gb[xform[d][i]]=0;
           mlock[i-8]++;
           c++;
@@ -372,7 +338,7 @@ function trymove(d,gb,mt) {
           c++;
         }
       } else if (gb[xform[d][i-4]] === gb[xform[d][i]] && ! mlock[i-4]) {
-        gb[xform[d][i-4]]*=2;
+        gb[xform[d][i-4]]++;
         gb[xform[d][i]]=0;
         mlock[i-4]++;
         c++;
@@ -388,13 +354,27 @@ function trymove(d,gb,mt) {
   return(c);
 }
 
+
+function lookahead(p) {
+  var scores = [];
+  for (var i=0;i<4;i++) {
+    var b = gameboard[p].slice();
+    var e = empty[p].slice();
+    if ( trymove(i,b,e) ) {
+      scores[i] = 1;
+    } else {
+      scores[i] = 0;
+    }
+  }
+  return(scores);
+}
+
 function startgame(p) {
   gameboard[p] = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
   empty[p]     = [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ];
+  traindata[p] = [];
 
   neat.population[p].score = 0;
-  neat.population[p].fuckup = 0;
-  neat.population[p].bonus = 0;
   playing[p] = 1;
   gameboard[p][randpop(p,empty[p])] = PRNG[p].uniform() < 0.9 ? 2 : 4;
   gameboard[p][randpop(p,empty[p])] = PRNG[p].uniform() < 0.9 ? 2 : 4;
@@ -404,30 +384,44 @@ function startgame(p) {
 function nextturn(p) {
   brain = neat.population[p];
 
-  //brain.score += 1;
-  var out = brain.activate(gameboard[p]);
-  var z = Math.max(...out);
-  if (out[0] == z) {
-    move(p,0);
-  } else if (out[1] == z) {
-    move(p,1);
-  } else if (out[2] == z) {
-    move(p,2);
+  var gb = gameboard[p].slice();
+  for (var i=0;i<16;i++) { gb[i] /= 16; }
+  var out = brain.activate(gb);
+  brain.lastoutput = out.slice();
+  var s = lookahead(p);
+  if (! Math.max(...s)) {
+    // Game over, man.
+    playing[p]=0;
+    document.getElementById("sc"+p).style.backgroundColor = "#f99";
+    document.getElementById("sc"+p).parentNode.style.opacity = "0.5";
+    if (! Math.max(...playing)) { endEval(); }
   } else {
-    move(p,3);
+    for (var i=0;i<4;i++) {
+      if (!s[i]) { out[i] = -2; }
+    }
+    var z = Math.max(...out);
+    if (out[0] == z) {
+      move(p,0);
+    } else if (out[1] == z) {
+      move(p,1);
+    } else if (out[2] == z) {
+      move(p,2);
+    } else {
+      move(p,3);
+    }
   }
 }
 
 function endEval() {
   neat.sort();
-  if (neat.population[0].score + neat.population[0].fuckup - neat.population[0].bonus > hiscore) {
-    hiscore = neat.population[0].score + neat.population[0].fuckup - neat.population[0].bonus;
+  if (neat.population[0].score > hiscore) {
+    hiscore = neat.population[0].score;
     document.getElementById("hxsc").innerText = hiscore.toString()+ " (Gen: "+neat.generation+")";
   }
   document.getElementById("genx").innerText = neat.generation;
-  document.getElementById("hisc").innerText = neat.population[0].score + neat.population[0].fuckup - neat.population[0].bonus;
+  document.getElementById("hisc").innerText = neat.population[0].score;
   document.getElementById("avsc").innerText = neat.getAverage();
-//  drawGraph(neat.population[0].graph(1000,1000), '.draw');
+  //drawGraph(neat.getFittest().graph(1000,1000), '.draw');
 /*
   for(var i = 0; i < neat.popsize; i++) {
     neat.population[i].clear();
@@ -448,8 +442,7 @@ function endEval() {
   
   // Brand New Random genomes to keep the gene pool fresh.
   for(var i = 0; i < neat.popsize - neat.elitism - neat.provenance; i++) {
-//  newPopulation.push(neataptic.architect.Random(16,16+Math.floor(Math.random()*10),4));
-    newPopulation.push(neataptic.architect.Perceptron(16,20+Math.floor(Math.random()*10),4));
+    newPopulation.push(neataptic.architect.Random(16,30+Math.floor(Math.random()*10),4));
   }
 
   // Replace the old population with the new population
@@ -462,16 +455,13 @@ function endEval() {
   startEval();
 }
 
-HEIGHT = 1200;
-WIDTH = 800;
-LINK_DISTANCE = 20;
-REPEL_FORCE = 10;
+HEIGHT = 1000;
 var neat = new neataptic.Neat(16,4,null, {
     popsize: 60,
-    elitism: 3,
-    provenance: 10,
-    mutationRate: 0.3,
-//    equal: true,
+    elitism: 1,
+    provenance: 9,
+    mutationRate: 0.5,
+    equal: true,
     mutation: [
       neataptic.methods.mutation.ADD_NODE,
       neataptic.methods.mutation.SUB_NODE,
@@ -487,8 +477,7 @@ var neat = new neataptic.Neat(16,4,null, {
       neataptic.methods.mutation.ADD_BACK_CONN,
       neataptic.methods.mutation.SUB_BACK_CONN
     ],
-//  network: new neataptic.architect.Random(16,20,4),
-    network: new neataptic.architect.Perceptron(16,20,4),
+    network: new neataptic.architect.Random(16,30,4),
     });
 var hiscore = 0;
 console.log(neat.elitism);
@@ -504,23 +493,20 @@ console.log(neat.population[i].train(trainingData, {
 }));
 }
 */    
+var newPuzzleRate = 5;
+var seed = Date() + Math.random();
 function startEval() {
-  var seed = Date();
-  //seed = '1';
+  if ( neat.generation % newPuzzleRate == 0 ) {
+    seed = Date() + Math.random();
+    console.log("Random Seed: "+seed);
+  }
+  seed = '1';
 
   for (var i=0;i<neat.popsize;i++) {
     document.getElementById("sc"+i).style.backgroundColor = "#fff";
+    document.getElementById("sc"+i).parentNode.style.opacity = "1";
     PRNG[i] = new RNG(seed);
     startgame(i);
-  }
-}
-
-function showDisplayToggle() {
-  var d = document.getElementById("gamedisplay");
-  if (d.style.display === "none") {
-    d.style.display = "block";
-  } else {
-    d.style.display = "none";
   }
 }
 
