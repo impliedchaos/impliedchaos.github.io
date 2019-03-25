@@ -3,6 +3,7 @@
   <head>
     <title>2048</title>
     <script src="https://wagenaartje.github.io/neataptic/cdn/1.4.7/neataptic.js"></script>
+    <script src="https://rawgit.com/skeeto/rng-js/master/rng.js"></script>
     <style>
 td { width: 80px; height: 80px; background-color: #BBB; font-family: sans-serif; font-size: 28px; text-align: center;}
     </style>
@@ -42,6 +43,7 @@ td { width: 80px; height: 80px; background-color: #BBB; font-family: sans-serif;
     <button onClick="move(1)">down</button>
     <br/>
     <input type=text id="stat" />
+    <button onClick="startgame()">rest</button>
     <script>
 // transformation matrices.
 var xform = [ [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ],   // Up
@@ -74,7 +76,7 @@ function rotateHue(h) {
 }
 
 function randpop(a) {
-  return(a.splice(Math.floor(Math.random()*(a.length)),1));
+  return(a.splice(Math.floor(PRNG.uniform()*(a.length)),1));
 }
 
 function display() {
@@ -175,7 +177,7 @@ function move(d) {
       empty.push(i);
     }
   }
-  if (c) { gameboard[randpop(empty)] = (Math.floor(Math.random()*2)+1)*2; }
+  if (c) { gameboard[randpop(empty)] = (Math.floor(PRNG.uniform()*2)+1)*2; }
   display();
 }
 
@@ -270,64 +272,31 @@ function score(gb,mt) {
   return(Math.max(...gb)*mt.length);
 }
 
-Array.prototype.average = function () { var sum = 0, j = 0; for (var i = 0; i < this.length, isFinite(this[i]); i++) { sum += parseFloat(this[i]); ++j; } return j ? sum / j : 0; };
-
-function lookahead() {
+function lookahead(p) {
   var boards = [];
   var emptys = [];
   var scores = [];
   for (var i=0;i<4;i++) {
-    boards[i] = gameboard.slice();
-    emptys[i] = empty.slice();
+    boards[i] = gameboard[p].slice();
+    emptys[i] = empty[p].slice();
     if ( trymove(i,boards[i],emptys[i]) ) {
       scores[i] = score(boards[i],emptys[i]);
-      las = [];
-      for (var k=0; k < emptys.length; k++) {
-        for (var l=0; l < 2; l++) {
-          for (var m=0; m < 4; m++) {
-            var tb = boards[i].slice();
-            var te = emptys[i].slice();
-            tb[te[k]] = (l+1)*2;
-            if (trymove(m,tb,te)) {
-              var sc = score(tb,te);
-              las.push(sc);
-            } else {
-             // las.push(0);
-            }
-          }
-        }
-      }
-      scores[i] += Math.floor(las.average());
     } else {
       scores[i] = 0;
     }
   }
-//  console.log(scores);
-  var mx = Math.max(...scores);
-  mx = 0;
-  if (mx) {
-    if (scores[0] == mx) {
-      move(0);
-    } else if (scores[2] == mx) {
-      move(2);
-    } else if (scores[1] == mx) {
-      move(1);
-    } else {
-      move(3);
-    }
-  }
+  return(scores);
 }
 
 function startgame() {
   gameboard = [ 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 ];
   empty     = [ 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15 ];
 
-  gameboard[randpop(empty)] = (Math.floor(Math.random()*2)+1)*2;
-  gameboard[randpop(empty)] = (Math.floor(Math.random()*2)+1)*2;
+  gameboard[randpop(empty)] = (Math.floor(PRNG.uniform()*2)+1)*2;
+  gameboard[randpop(empty)] = (Math.floor(PRNG.uniform()*2)+1)*2;
   display();
 }
-
-startgame();
+var PRNG = new RNG("1");
 
       var trainingData = [];
       
@@ -335,19 +304,20 @@ startgame();
 document.onkeydown = function (event) {
   key = event.key;
   if (key == "ArrowUp") {
-    trainingData.push({input: gameboard, output: [1,0,0,0]});
+    trainingData.push({input: gameboard.slice(), output: [1,0,0,0]});
     move(0);
   } else if (key == "ArrowDown") {
-    trainingData.push({input: gameboard, output: [0,1,0,0]});
+    trainingData.push({input: gameboard.slice(), output: [0,1,0,0]});
     move(1);
   } else if (key == "ArrowLeft") {
-    trainingData.push({input: gameboard, output: [0,0,1,0]});
+    trainingData.push({input: gameboard.slice(), output: [0,0,1,0]});
     move(2);
   } else if (key == "ArrowRight") {
-    trainingData.push({input: gameboard, output: [0,0,0,1]});
+    trainingData.push({input: gameboard.slice(), output: [0,0,0,1]});
     move(3);
   }
 }
+startgame();
     </script>
   </body>
 </html>
