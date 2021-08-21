@@ -19,6 +19,9 @@ jobs:
         with:
           fetch-depth: 0
       - name: Get Tracking Data
+        env:
+          SPACE_TRACK_ID: ${{ secrets.SPACE_TRACK_ID }}
+          SPACE_TRACK_PW: ${{ secrets.SPACE_TRACK_PW }}
         run: cd starlink && perl starlinkupdate.pl
       - name: Commit changes
         run: |
