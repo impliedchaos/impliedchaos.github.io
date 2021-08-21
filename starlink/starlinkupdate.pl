@@ -40,7 +40,7 @@ for (my $i=0; $i<@$sats; $i++) {
    delete($sats->[$i]->{TLE_LINE0});
 }
 open(my $fh, ">", "starlink.js") or die "can't open starlink.js for writing: $!";
-my $today = sprintf("%Y-%m-%d",gmtime());
+my $today = strftime("%Y-%m-%d",gmtime());
 print $fh "start=new Date('${today}T00:00:00.000Z').valueOf();\n";
 print $fh "sats=".encode_json($sats).";\n";
 close($fh);
