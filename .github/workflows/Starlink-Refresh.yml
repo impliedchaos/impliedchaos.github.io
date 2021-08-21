@@ -4,7 +4,12 @@ on:
   schedule:
     # Daily at 05:38
     - cron: '38 5 * * *'
-  workflow_dispatch
+  workflow_dispatch:
+    inputs:
+      ignore:
+        description: nothing
+        required: false
+        default: ignore
 
 jobs:
   refresh:
