@@ -1,0 +1,21 @@
+name: Starlink Tracking Refresh
+
+on:
+  schedule:
+    # Daily at 05:38
+    - cron: '38 5 * * *'
+  workflow_dispatch
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Get Tracking Data
+        run: cd starlink && perl starlinkupdate.pl
+      - name: Commit changes
+        run: |
+          git config user.name "github-actions" && git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add starlink.js && git commit -m "Update starlink tracking data." && git push
