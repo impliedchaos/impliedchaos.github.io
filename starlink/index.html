@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <meta name="charset" content="UTF-8">
+      <meta name="author" content="Dave Maez">
+      <title>STARLINK satellites August 20th, 2021</title>
+      <!-- <link rel="stylesheet" type="text/css" href="file.css"> -->
+<style>
+#draw { cursor:crosshair; }
+#drawb { border: 0; margin-right: 10px; float:left;}
+#satinfo {background-color: #fca; padding:10px; margin:10px; font-family: monospace}
+</style>
+      <script src="https://impliedchaos.github.io/starlink/starlink.js"></script> 
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js" integrity="sha512-JxDmggH93+jdpfW+JF5CgtX1VNBAsvZVbswpqCtTMPyRvPkI+BMdm0L7JR9fbjxEoWt93AyPeiK0OrvfQWx++A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+   </head>
+   <body>
+      <div id="drawb"><canvas id="draw"></canvas></div>
+      <div id="satinfo">
+         Sat: <select id="followsel" onchange="follow=this.value"></select>
+         <br/>NORAD ID: <span id="norad"></span>
+         <br/>Object ID: <span id="object"></span>
+         <br/>Speed: <span id="spd"></span>km/s
+         <br/>Altitude: <span id="altitude"></span>km
+         <br/>Longitude: <span id="lng"></span>&deg;
+         <br/>Latitude: <span id="lat"></span>&deg;
+         <br/>Apogee: <span id="apogee"></span>km
+         <br/>Perigee: <span id="perigee"></span>km
+         <br/>Eccentricity: <span id="eccentricity"></span>
+         <br/>Inclination: <span id="inclination"></span>&deg;
+         <br/>Semi Major Axis: <span id="axis"></span>km
+         <br/>Period: <span id="period"></span> minutes
+      </div>
+      <br/>
+      Speed: <input type="range" min="0" max="1000" value="30" list="spdf" step="1" id="speed"> <span id="speedlabel">1</span>
+      <br/>
+      <datalist id="spdf"><option value="0"><option value="1"><option value="30"></option></datalist>
+      Rotation: <input type="range" min="0" max="2" value="2" step="1" id="rotfact"> <span id="rotlabel">2</span>
+      <br/>
+      <script>
+var so=[];
+var sp=[];
+var cur=[];
+var sel=document.getElementById("followsel");
+for (let i=0; i<sats.length; i++) { 
+   so[i]=satellite.twoline2satrec(sats[i].TLE_LINE1,sats[i].TLE_LINE2);
+   let opt = document.createElement('option');
+   opt.value = i;
+   opt.innerHTML = sats[i].OBJECT_NAME;
+   sel.appendChild(opt);
+}
+
+var c=document.getElementById("draw")
+var ctx=c.getContext("2d")
+c.height=800;
+c.width=800;
+//var start=1629432000000;
+var end=start+86400000;
+var time=start;
+var lasttime=0;
+const rot=Math.PI/43200000;
+var theta=0;//Math.PI/2;
+const ER=6378.136;
+var follow=0;
+var now = new Date();
+var gmst = {};
+
+function update() {
+   let s = so[follow];
+   let p = satellite.propagate(s,now);
+   let pos = p.position;
+   let pgd = satellite.eciToGeodetic(pos,gmst);
+// let alt1 = Math.sqrt(pos.x*pos.x + pos.y*pos.y + pos.z*pos.z) - ER;
+   let alt = pgd.height;
+   let lat = satellite.degreesLat(pgd.latitude);
+   let lng = satellite.degreesLong(pgd.longitude);
+   let vel = p.velocity;
+   let spd = Math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z);
+   document.getElementById("altitude").innerHTML=alt.toString().substr(0,7);//+" "+alt1.toString().substr(0,7);
+   document.getElementById("spd").innerHTML=spd.toString().substr(0,7);
+   document.getElementById("norad").innerHTML='<a href="https://www.n2yo.com/satellite/?s='+sats[follow].NORAD_CAT_ID+'" target="_blank">'+sats[follow].NORAD_CAT_ID+'</a>';
+   document.getElementById("object").innerHTML=sats[follow].OBJECT_ID;
+   document.getElementById("apogee").innerHTML=sats[follow].APOAPSIS;
+   document.getElementById("perigee").innerHTML=sats[follow].PERIAPSIS;
+   document.getElementById("eccentricity").innerHTML=sats[follow].ECCENTRICITY;
+   document.getElementById("inclination").innerHTML=sats[follow].INCLINATION;
+   document.getElementById("axis").innerHTML=sats[follow].SEMIMAJOR_AXIS;
+   document.getElementById("period").innerHTML=sats[follow].PERIOD;
+   document.getElementById("lat").innerHTML=lat;
+   document.getElementById("lng").innerHTML=lng;
+   sel.value=follow;
+}
+
+c.addEventListener('click',(e)=> {
+   let boundingRect = e.target.getBoundingClientRect();
+   let x = e.clientX - boundingRect.left,
+       y = e.clientY - boundingRect.top;
+
+   for (let i=0; i<cur.length; i++) {
+      dx=x - cur[i].x;
+      dy=y - cur[i].y;
+      if (dx*dx + dy*dy < cur[i].r*cur[i].r) {
+         follow=i;
+//         console.log("ok "+e.clientX+" "+e.clientY+" "+cur[i].x+" "+cur[i].y+" "+cur[i].r);
+         break;
+      }
+//      if (i==cur.length-1) console.log("nope "+e.clientX+" "+e.clientY);
+   }
+});
+
+
+function draw(ts) {
+   let fps=ts-lasttime;
+   lasttime=ts;
+   now = new Date(time);
+   gmst = satellite.gstime(now);
+   let speed = document.getElementById("speed").value;
+   document.getElementById("speedlabel").innerHTML=speed;
+   let rotfact = document.getElementById("rotfact").value;
+   document.getElementById("rotlabel").innerHTML=rotfact;
+   let tmp=[];
+   for (let i=0; i<sats.length; i++) {
+      let pos=satellite.propagate(so[i],now);
+      tmp[i]=satellite.eciToEcf(pos.position,gmst);
+      let x=Math.cos(theta)*tmp[i].x-Math.sin(theta)*tmp[i].y;
+      let y=Math.cos(theta)*tmp[i].y+Math.sin(theta)*tmp[i].x;
+      tmp[i].x=x;
+      tmp[i].y=y;
+      tmp[i].i=i;
+   }
+   sp=tmp.sort((a,b)=>{return(a.x>b.x?1:a.x<b.x?-1:0)});
+   ctx.fillStyle="#000";
+   ctx.fillRect(0,0,800,800);
+   let fo=so[follow];
+   ctx.beginPath();
+   for (let i=0; i<7200000; i+=100000) {
+      let n=new Date(time+i-3600000);
+      let p=satellite.eciToEcf(satellite.propagate(fo,n).position,gmst);
+      if (i<3600000) {ctx.strokeStyle="#ff4f4f"} else {ctx.strokeStyle="#4fff4f"}
+      let x1=Math.cos(theta)*p.x-Math.sin(theta)*p.y;
+      let y1=Math.cos(theta)*p.y+Math.sin(theta)*p.x;
+      let z=-1*(x1/8-7500);
+      let x=(1+y1/z)*400;
+      let y=(1-p.z/z)*400;
+      if(i && x1 <= 0) {
+         ctx.lineTo(x,y);
+      } else {
+         ctx.stroke(); ctx.beginPath();
+         ctx.moveTo(x,y);
+      }
+   }
+   ctx.stroke();
+   for (let i=0; i<sp.length; i++) {
+      if (sp[i].x > 0) continue;
+      let z=-1*(sp[i].x/8-7500);
+      let r=(sp[i].i==follow)?5:(sp[i].x/8+875)/1750+3;
+      let x=(1+sp[i].y/z)*400;
+      let y=(1-sp[i].z/z)*400;
+      let c=(sp[i].x-7000)/14000*192+255;
+      ctx.fillStyle="rgb("+c+","+c+","+c+")";
+      if (sp[i].i==follow) ctx.fillStyle="#ffff7f";
+      ctx.strokeStyle="#000";
+      cur[sp[i].i]={"x":x,"y":y,"r":r};
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+   }
+   ctx.fillStyle="rgba(0,0,255,0.25)"
+   ctx.beginPath();
+   ctx.arc(400,400,ER/7500*400,0,Math.PI*2);
+   ctx.fill();
+   ctx.beginPath();
+   for (let i=0; i<180; i++) {
+      let r=Math.PI+i*Math.PI/180;
+      let x=Math.sin(r)*ER;
+      let y=Math.cos(r)*ER;
+      let x1=Math.cos(Math.PI/2+theta)*x;
+      let z1=Math.sin(Math.PI/2+theta)*x;
+      if(i==90){if(z1>0){ctx.strokeStyle="#7f7f7f";} else {ctx.strokeStyle="#ffff00";}}
+      let z=-1*(z1/8-7500);
+      x=(1+x1/z)*400;
+      y=(1-y/z)*400;
+      if (!i) {
+         ctx.moveTo(x,y);
+      } else {
+         ctx.lineTo(x,y);
+      }
+   }
+   ctx.stroke();
+   ctx.beginPath();
+   for (let i=0; i<7200000; i+=100000) {
+      let n=new Date(time+i-3600000);
+      let p=satellite.eciToEcf(satellite.propagate(fo,n).position,gmst);
+      if (i<3600000) {ctx.strokeStyle="#ff4f4f"} else {ctx.strokeStyle="#4fff4f"}
+      let x1=Math.cos(theta)*p.x-Math.sin(theta)*p.y;
+      let y1=Math.cos(theta)*p.y+Math.sin(theta)*p.x;
+      let z=-1*(x1/8-7500);
+      let x=(1+y1/z)*400;
+      let y=(1-p.z/z)*400;
+      if(i && x1 > 0) {
+         ctx.lineTo(x,y);
+      } else {
+         ctx.stroke(); ctx.beginPath();
+         ctx.moveTo(x,y);
+      }
+   }
+   ctx.stroke();
+   for (let i=0; i<sp.length; i++) {
+      if (sp[i].x <= 0) continue;
+      let z=-1*(sp[i].x/8-7500);
+      let r=(sp[i].i==follow)?5:(sp[i].x/8+875)/1750+3;
+      let x=(1+sp[i].y/z)*400;
+      let y=(1-sp[i].z/z)*400;
+      let c=(sp[i].x-7000)/14000*192+255;
+      ctx.fillStyle="rgb("+c+","+c+","+c+")";
+      if (sp[i].i==follow) ctx.fillStyle="#ffff7f";
+      ctx.strokeStyle="#000";
+      cur[sp[i].i]={"x":x,"y":y,"r":r};
+      ctx.beginPath();
+      ctx.arc(x,y,r,0,Math.PI*2);
+      ctx.fill();
+      ctx.stroke();
+   }
+   update();
+   time+=speed*fps;
+   theta=rot*rotfact*(time-start);
+   if (time > end) {
+      time=start;
+   }
+   ctx.font="12px sans-serif";
+   ctx.fillStyle="#ffff7f";
+   ctx.fillText(now.toLocaleString(),1,13);
+   ctx.fillText("FPS: "+(1000/fps).toString().substr(0,7),1,798);
+   window.requestAnimationFrame(draw);
+}
+window.requestAnimationFrame(draw);
+      </script>
+   </body>
+</html>
