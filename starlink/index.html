@@ -16,7 +16,7 @@
    <body>
       <div id="drawb"><canvas id="draw"></canvas></div>
       <div id="satinfo">
-         Sat: <select id="followsel" onchange="follow=this.value"></select>
+         Sat: <select id="followsel" onchange="follow=this.value"></select> Constellation Size: <span id="count">0</span>
          <br/>NORAD ID: <span id="norad"></span>
          <br/>Object ID: <span id="object"></span>
          <br/>Speed: <span id="spd"></span>km/s
@@ -229,10 +229,11 @@ function draw(ts) {
    }
    ctx.font="12px sans-serif";
    ctx.fillStyle="#ffff7f";
-   ctx.fillText(now.toLocaleString(),1,13);
+   ctx.fillText(now.toUTCString(),1,13);
    ctx.fillText("FPS: "+(1000/fps).toString().substr(0,7),1,798);
    window.requestAnimationFrame(draw);
 }
+document.getElementById("count").innerHTML=sats.length.toString();
 window.requestAnimationFrame(draw);
       </script>
    </body>
