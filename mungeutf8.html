@@ -770,6 +770,18 @@ function ROT13(text) {
    return(out);
 }
 
+function ROT8000(text) {
+   var out = '';
+   for (var i = 0; i < text.length; i++) {
+      var chr = text.charCodeAt(i);
+      if (chr > 32) {
+         chr = (chr + 0x8000) & 0xFFFF;
+      }
+      out += String.fromCharCode(chr);
+   }
+   return(out);
+}
+
 function CShift(text,amt) {
    var out = '';
    for (var i = 0; i < text.length; i++) {
@@ -1102,6 +1114,9 @@ function mungeIt(func) {
       case 'ROT13':
          out = ROT13(text);
          break;
+      case 'ROT8000':
+         out = ROT8000(text);
+         break;
       case 'CShift':
          var lsel = document.getElementById('CShiftLen');
          var len = parseInt(lsel.options[lsel.selectedIndex].value,10);
@@ -1420,6 +1435,7 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('DVORAK');">Dvorak to QWERTY</button>
          <button onclick="mungeIt('AZC1');">A-Z to 01-26</button>
          <button onclick="mungeIt('AZC0');">A-Z to 00-25</button>
+         <button onclick="mungeIt('ROT8000');;">ROT8000</button>
    </div><br/><div><span class="shead">ASCII to/from Unicode Mungers:</span><br/> 
          <button onclick="mungeIt('fullWidth');">Full Width</button>
          <button onclick="mungeIt('deFullWidth');">de-Full Width</button>
