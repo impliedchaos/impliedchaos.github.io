@@ -19,6 +19,7 @@
          Sat: <select id="followsel" onchange="follow=this.value"></select> Constellation Size: <span id="count">0</span>
          <br/>NORAD ID: <span id="norad"></span>
          <br/>Object ID: <span id="object"></span>
+         <br/>Launch Date: <span id="ldate"></span>
          <br/>Speed: <span id="spd"></span>km/s
          <br/>Altitude: <span id="altitude"></span>km
          <br/>Longitude: <span id="lng"></span>&deg;
@@ -79,6 +80,7 @@ function update() {
    document.getElementById("spd").innerHTML=spd.toString().substr(0,7);
    document.getElementById("norad").innerHTML='<a href="https://www.n2yo.com/satellite/?s='+sats[follow].NORAD_CAT_ID+'" target="_blank">'+sats[follow].NORAD_CAT_ID+'</a>';
    document.getElementById("object").innerHTML=sats[follow].OBJECT_ID;
+   document.getElementById("ldate").innerHTML=sats[follow].LAUNCH_DATE;
    document.getElementById("apogee").innerHTML=sats[follow].APOAPSIS;
    document.getElementById("perigee").innerHTML=sats[follow].PERIAPSIS;
    document.getElementById("eccentricity").innerHTML=sats[follow].ECCENTRICITY;
