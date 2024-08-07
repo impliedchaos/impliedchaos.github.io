@@ -584,6 +584,80 @@ function superscript(instr) {
     } else if (c == 110) {
       c = 8319;
       outstr += String.fromCharCode(c);
+    } else if (c >= 65 && c <= 66) {
+      outstr += String.fromCharCode(c+7403);
+    } else if (c == 67) {
+      outstr += String.fromCharCode(42994);
+    } else if (c >= 68 && c <= 69) {
+       outstr += String.fromCharCode(c+7403);
+    } else if (c == 70) {
+      outstr += String.fromCharCode(42995);
+    } else if (c >= 71 && c <= 78) {
+      outstr += String.fromCharCode(c+7404);
+    } else if (c == 79) {
+      outstr += String.fromCharCode(c+7405);
+    } else if (c == 80) {
+      outstr += String.fromCharCode(c+7406);
+    } else if (c == 81) {
+      outstr += String.fromCharCode(42996);
+    } else if (c == 82) {
+      outstr += String.fromCharCode(c+7405);
+    } else if (c >= 84 && c <= 85) {
+      outstr += String.fromCharCode(c+7404);
+    } else if (c == 86) {
+      outstr += String.fromCharCode(11389);
+    } else if (c == 87) {
+      outstr += String.fromCharCode(7490);
+    } else if (c == 97) {
+      outstr += String.fromCharCode(7491);
+    } else if (c == 98) {
+      outstr += String.fromCharCode(7495);
+    } else if (c == 99) {
+      outstr += String.fromCharCode(7580);
+    } else if (c >= 100 && c <= 101) {
+      outstr += String.fromCharCode(c+7396);
+    } else if (c == 102) {
+      outstr += String.fromCharCode(7584);
+    } else if (c == 103) {
+      outstr += String.fromCharCode(7586);
+    } else if (c == 104) {
+      outstr += String.fromCharCode(688);
+    } else if (c == 105) {
+      outstr += String.fromCharCode(8305);
+    } else if (c == 106) {
+      outstr += String.fromCharCode(690);
+    } else if (c == 107) {
+      outstr += String.fromCharCode(7503);
+    } else if (c == 108) {
+      outstr += String.fromCharCode(737);
+    } else if (c == 109) {
+      outstr += String.fromCharCode(7504);
+    } else if (c == 110) {
+      outstr += String.fromCharCode(8319);
+    } else if (c == 111) {
+      outstr += String.fromCharCode(7506);
+    } else if (c == 112) {
+      outstr += String.fromCharCode(7510);
+    } else if (c == 113) {
+      outstr += String.fromCharCode(67493);
+    } else if (c == 114) {
+      outstr += String.fromCharCode(691);
+    } else if (c == 115 || c == 83) {
+      outstr += String.fromCharCode(738);
+    } else if (c == 116) {
+      outstr += String.fromCharCode(7511);
+    } else if (c == 117) {
+      outstr += String.fromCharCode(7512);
+    } else if (c == 118) {
+      outstr += String.fromCharCode(7515);
+    } else if (c == 119) {
+      outstr += String.fromCharCode(7514);
+    } else if (c == 120 || c == 88) {
+      outstr += String.fromCharCode(7521);
+    } else if (c == 121 || c == 89) {
+      outstr += String.fromCharCode(696);
+    } else if (c == 122 || c == 90) {
+      outstr += String.fromCharCode(7611);
     } else {
       outstr += instr.charAt(i);
     }
