@@ -584,11 +584,15 @@ function superscript(instr) {
     } else if (c == 110) {
       c = 8319;
       outstr += String.fromCharCode(c);
-    } else if (c >= 65 && c <= 66) {
+    } else if (c == 65) {
       outstr += String.fromCharCode(c+7403);
+    } else if (c == 66) {
+      outstr += String.fromCharCode(c+7404);
     } else if (c == 67) {
       outstr += String.fromCharCode(42994);
-    } else if (c >= 68 && c <= 69) {
+    } else if (c == 68) {
+       outstr += String.fromCharCode(c+7404);
+    } else if (c == 69) {
        outstr += String.fromCharCode(c+7403);
     } else if (c == 70) {
       outstr += String.fromCharCode(42995);
