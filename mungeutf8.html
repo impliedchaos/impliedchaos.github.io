@@ -1140,6 +1140,9 @@ function Monospace(instr) {
      } else if (c > 47 && c < 58) {
        c += 120774;
        outstr += String.fromCodePoint(c);
+     } else if (c == 32) {
+       c = 0x2007;
+       outstr += String.fromCharCode(c);
      } else {
        outstr += instr.charAt(i);
      }
