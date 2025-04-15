@@ -1071,6 +1071,42 @@ function az2count0(instr) {
   return(outstr);
 }
 
+function dblstrike(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 64 && c < 91) {
+       if (c == 67) {
+         c = 0x2102;
+       } else if (c == 72) {
+         c = 0x210D;
+       } else if (c == 78) {
+         c = 0x2115;
+       } else if (c == 80) {
+         c = 0x2119;
+       } else if (c == 81) {
+         c = 0x211A;
+       } else if (c == 82) {
+         c = 0x211D;
+       } else if (c == 90) {
+         c = 0x2124;
+       } else {
+         c += 120055;
+       }
+       outstr += String.fromCodePoint(c);
+     } else if (c > 96 && c < 123) {
+       c += 120049;
+       outstr += String.fromCodePoint(c);
+     } else if (c > 47 && c < 58) {
+       c += 120744;
+       outstr += String.fromCodePoint(c);
+     } else {
+       outstr += instr.charAt(i);
+     }
+  }
+  return(outstr);
+}
+
 
 function qwerty2dvorak(text) {
    var out = '';
@@ -1194,6 +1230,9 @@ function mungeIt(func) {
          break;
       case 'ROT8000':
          out = ROT8000(text);
+         break;
+      case 'DblStrike':
+         out = dblstrike(text);
          break;
       case 'CShift':
          var lsel = document.getElementById('CShiftLen');
@@ -1513,7 +1552,7 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('DVORAK');">Dvorak to QWERTY</button>
          <button onclick="mungeIt('AZC1');">A-Z to 01-26</button>
          <button onclick="mungeIt('AZC0');">A-Z to 00-25</button>
-         <button onclick="mungeIt('ROT8000');;">ROT8000</button>
+         <button onclick="mungeIt('ROT8000');">ROT8000</button>
    </div><br/><div><span class="shead">ASCII to/from Unicode Mungers:</span><br/> 
          <button onclick="mungeIt('fullWidth');">Full Width</button>
          <button onclick="mungeIt('deFullWidth');">de-Full Width</button>
@@ -1521,9 +1560,11 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('decircled');">de-Circled</button>
          <button onclick="mungeIt('fucked');">K-Rad Modern</button>
          <button onclick="mungeIt('banner');">Banner</button>
+         <button onclick="mungeIt('ROT8000');">ROT8000</button>
          <button onclick="mungeIt('cursive');">Cursive</button>
          <button onclick="mungeIt('subscript');">Subscript #s</button>
          <button onclick="mungeIt('superscript');">Superscript</button>
+         <button onclick="mungeIt('DblStrike');">Double Struck</button>
    </div><br/><div><span class="shead">Unicode to ASCII Transliteration:</span><br/> 
          <button onclick="mungeIt('transR2E');">Russian to "English"</button>
          <button onclick="mungeIt('transK2E');">Hiragana/Katakana to Romaji</button>
