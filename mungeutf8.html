@@ -1107,7 +1107,45 @@ function dblstrike(instr) {
   return(outstr);
 }
 
+function FrakturBold(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 64 && c < 91) {
+       c += 120107;
+       outstr += String.fromCodePoint(c);
+     } else if (c > 96 && c < 123) {
+       c += 120101;
+       outstr += String.fromCodePoint(c);
+     } else if (c > 47 && c < 58) {
+       c += 120734;
+       outstr += String.fromCodePoint(c);
+     } else {
+       outstr += instr.charAt(i);
+     }
+  }
+  return(outstr);
+}
 
+function Monospace(instr) {
+  var outstr = '';
+  for (var i = 0; i < instr.length; i++) {
+    var c = instr.charCodeAt(i);
+    if (c > 64 && c < 91) {
+       c += 120367;
+       outstr += String.fromCodePoint(c);
+     } else if (c > 96 && c < 123) {
+       c += 120361;
+       outstr += String.fromCodePoint(c);
+     } else if (c > 47 && c < 58) {
+       c += 120774;
+       outstr += String.fromCodePoint(c);
+     } else {
+       outstr += instr.charAt(i);
+     }
+  }
+  return(outstr);
+}
 function qwerty2dvorak(text) {
    var out = '';
    var dvorak = "!_#$%&-()*}w[vz0123456789SsW]VZ@AXJE>UIDCHTNMBRL\"POYGK<QF:/\\=^{`axje.uidchtnmbrl'poygk,qf;?|+~";
@@ -1233,6 +1271,12 @@ function mungeIt(func) {
          break;
       case 'DblStrike':
          out = dblstrike(text);
+         break;
+      case 'FrakturBold':
+         out = FrakturBold(text);
+         break;
+      case 'Monospace':
+         out = Monospace(text);
          break;
       case 'CShift':
          var lsel = document.getElementById('CShiftLen');
@@ -1552,7 +1596,6 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('DVORAK');">Dvorak to QWERTY</button>
          <button onclick="mungeIt('AZC1');">A-Z to 01-26</button>
          <button onclick="mungeIt('AZC0');">A-Z to 00-25</button>
-         <button onclick="mungeIt('ROT8000');">ROT8000</button>
    </div><br/><div><span class="shead">ASCII to/from Unicode Mungers:</span><br/> 
          <button onclick="mungeIt('fullWidth');">Full Width</button>
          <button onclick="mungeIt('deFullWidth');">de-Full Width</button>
@@ -1565,6 +1608,8 @@ for (var i = 0; i < instr.length; i++) {
          <button onclick="mungeIt('subscript');">Subscript #s</button>
          <button onclick="mungeIt('superscript');">Superscript</button>
          <button onclick="mungeIt('DblStrike');">Double Struck</button>
+         <button onclick="mungeIt('FrakturBold');">Fraktur Bold</button>
+         <button onclick="mungeIt('Monospace');">Monospace</button>
    </div><br/><div><span class="shead">Unicode to ASCII Transliteration:</span><br/> 
          <button onclick="mungeIt('transR2E');">Russian to "English"</button>
          <button onclick="mungeIt('transK2E');">Hiragana/Katakana to Romaji</button>
