@@ -67,6 +67,11 @@ button:hover { background: #222d44; }
 .shapes em { font-style: normal; margin-left: auto; font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; opacity: .7; }
 .shapes i.ln { display: inline-block; width: 18px; height: 3px; border-radius: 2px; flex: none; }
 .shapes i.grad { display: inline-block; width: 18px; height: 8px; border-radius: 2px; flex: none; background: linear-gradient(90deg, #1b2a4a, #cfe0ff); }
+.shapes .chip { display: flex; align-items: center; gap: 7px; flex: none; width: 100%; text-align: left;
+  background: transparent; border: 1px solid transparent; color: inherit; font: inherit; padding: 3px 6px; margin: -3px -6px; border-radius: 6px; cursor: pointer; }
+.shapes .chip:hover { background: #1a2335; border-color: var(--border); }
+.shapes .chip[aria-pressed="false"] { opacity: .38; }
+.shapes .chip[aria-pressed="false"] svg { filter: grayscale(1); }
 .shapes svg { width: 12px; height: 12px; fill: var(--text); flex: none; }
 .toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--dim); cursor: pointer; }
 .toggle input { accent-color: var(--accent2); }
@@ -112,19 +117,19 @@ button:hover { background: #222d44; }
     </section>
 
     <section class="card">
-      <h2>Legend</h2>
+      <h2>Legend <span style="text-transform:none;letter-spacing:0;font-weight:400">&mdash; click a group to show/hide it</span></h2>
       <div class="lg">Color &mdash; inclination</div>
       <div class="shapes">
-        <span><svg viewBox="-6 -6 12 12" style="fill:hsl(168 75% 55%)"><circle r="5"/></svg>~43&deg; <em id="n-i0"></em></span>
-        <span><svg viewBox="-6 -6 12 12" style="fill:hsl(220 100% 65%)"><circle r="5"/></svg>~53&deg; <em id="n-i1"></em></span>
-        <span><svg viewBox="-6 -6 12 12" style="fill:hsl(320 100% 65%)"><circle r="5"/></svg>~70&deg; <em id="n-i2"></em></span>
-        <span><svg viewBox="-6 -6 12 12" style="fill:hsl(30 100% 65%)"><circle r="5"/></svg>~97&deg; polar <em id="n-i3"></em></span>
+        <button type="button" class="chip" data-kind="i" data-g="0" aria-pressed="true"><svg viewBox="-6 -6 12 12" style="fill:hsl(168 75% 55%)"><circle r="5"/></svg>~43&deg; <em id="n-i0"></em></button>
+        <button type="button" class="chip" data-kind="i" data-g="1" aria-pressed="true"><svg viewBox="-6 -6 12 12" style="fill:hsl(220 100% 65%)"><circle r="5"/></svg>~53&deg; <em id="n-i1"></em></button>
+        <button type="button" class="chip" data-kind="i" data-g="2" aria-pressed="true"><svg viewBox="-6 -6 12 12" style="fill:hsl(320 100% 65%)"><circle r="5"/></svg>~70&deg; <em id="n-i2"></em></button>
+        <button type="button" class="chip" data-kind="i" data-g="3" aria-pressed="true"><svg viewBox="-6 -6 12 12" style="fill:hsl(30 100% 65%)"><circle r="5"/></svg>~97&deg; polar <em id="n-i3"></em></button>
       </div>
       <div class="lg">Shape &mdash; mean altitude</div>
       <div class="shapes one">
-        <span><svg viewBox="-6 -6 12 12"><path d="M0-5.5L5.5 4.5H-5.5Z"/></svg>&lt; 420 km: parking / raising / deorbiting <em id="n-a0"></em></span>
-        <span><svg viewBox="-6 -6 12 12"><circle r="5"/></svg>420&ndash;500 km: main shells <em id="n-a1"></em></span>
-        <span><svg viewBox="-6 -6 12 12"><path d="M0-6L5 0 0 6-5 0Z"/></svg>&gt; 500 km <em id="n-a2"></em></span>
+        <button type="button" class="chip" data-kind="a" data-g="0" aria-pressed="true"><svg viewBox="-6 -6 12 12"><path d="M0-5.5L5.5 4.5H-5.5Z"/></svg>&lt; 420 km: parking / raising / deorbiting <em id="n-a0"></em></button>
+        <button type="button" class="chip" data-kind="a" data-g="1" aria-pressed="true"><svg viewBox="-6 -6 12 12"><circle r="5"/></svg>420&ndash;500 km: main shells <em id="n-a1"></em></button>
+        <button type="button" class="chip" data-kind="a" data-g="2" aria-pressed="true"><svg viewBox="-6 -6 12 12"><path d="M0-6L5 0 0 6-5 0Z"/></svg>&gt; 500 km <em id="n-a2"></em></button>
       </div>
       <div class="lg">Brightness &mdash; depth</div>
       <div class="shapes one"><span><i class="grad"></i>dim = far side, bright = near side</span></div>
@@ -186,12 +191,23 @@ const incGroup = recs.map(r => { const v = +r.meta.INCLINATION; return v < 50 ? 
 // altitude groups -> marker shape: 0 low (<420 km) triangle, 1 main shells (420-500 km) circle, 2 high (>500 km) diamond
 const SHAPE = ["tri", "circle", "diamond"];
 const altGroup = recs.map(r => { const a = (+r.meta.APOAPSIS + +r.meta.PERIAPSIS) / 2; return a < 420 ? 0 : a < 500 ? 1 : 2; });
+const legendOff = { i: [false, false, false, false], a: [false, false, false] };   // legend toggles
+const isVisible = i => i === follow || !(legendOff.i[incGroup[i]] || legendOff.a[altGroup[i]]);
 // colour[i][level]: level 0 = far side of orbit (dim) .. LEVELS-1 = near (bright)
 const colour = incGroup.map(g => Array.from({ length: LEVELS }, (_, l) =>
   `hsl(${INC_HSL[g][0]} ${INC_HSL[g][1]}% ${(36 + 32 * l / (LEVELS - 1)).toFixed(0)}%)`));
 for (const [pre, arr, n] of [["i", incGroup, 4], ["a", altGroup, 3]])
   for (let g = 0; g < n; g++) $("n-" + pre + g).textContent = arr.filter(v => v === g).length.toLocaleString();
-$("count").textContent = N.toLocaleString();
+function updateCount() {
+  let v = 0; for (let i = 0; i < N; i++) if (isVisible(i)) v++;
+  $("count").textContent = v === N ? N.toLocaleString() : v.toLocaleString() + " of " + N.toLocaleString();
+}
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  const h = legendOff[b.dataset.kind], g = +b.dataset.g;
+  h[g] = !h[g];
+  b.setAttribute("aria-pressed", String(!h[g]));
+  updateCount();
+}));
 $("datadate").textContent = new Date(start).toISOString().slice(0, 10);
 document.title = "Starlink Constellation – " + new Date(start).toISOString().slice(0, 10);
 
@@ -199,6 +215,7 @@ document.title = "Starlink Constellation – " + new Date(start).toISOString().s
 let follow = 0, time = start, last = 0, paused = false, theta = 0;
 const glassEl = $("glass");
 let userYaw = 0, userPitch = 0;   // set by dragging
+updateCount();
 const cur = new Array(N);       // screen positions for hit-testing
 const pts = new Array(N);       // reusable per-frame buffers
 for (let i = 0; i < N; i++) pts[i] = { x: 0, y: 0, z: 0, i, ok: false };
@@ -395,6 +412,7 @@ const f = (v, d) => Number(v).toFixed(d);
 let lastPanel = 0;
 function updatePanel(now, gmst, ts) {
   if (ts - lastPanel < 100) return; lastPanel = ts;
+  updateCount();
   const m = recs[follow].meta;
   const pv = satellite.propagate(recs[follow].rec, now);
   if (!pv.position) return;
@@ -429,6 +447,7 @@ function frame(ts) {
 
   const live = [];
   for (let i = 0; i < N; i++) {
+    if (!isVisible(i)) { cur[i] = null; continue; }
     const pv = satellite.propagate(recs[i].rec, now);
     if (!pv.position) { cur[i] = null; continue; }
     const e = rotate(satellite.eciToEcf(pv.position, gmst), theta);
