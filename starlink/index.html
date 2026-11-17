@@ -1,242 +1,439 @@
 <!DOCTYPE html>
-<html>
-   <head>
-      <meta name="charset" content="UTF-8">
-      <meta name="author" content="Dave Maez">
-      <title>STARLINK satellites August 20th, 2021</title>
-      <!-- <link rel="stylesheet" type="text/css" href="file.css"> -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="author" content="Dave Maez">
+<title>Starlink Constellation</title>
 <style>
-#draw { cursor:crosshair; }
-#drawb { border: 0; margin-right: 10px; float:left;}
-#satinfo {background-color: #fca; padding:10px; margin:10px; font-family: monospace}
+:root {
+  --bg: #07090f;
+  --panel: #0f1420;
+  --border: #1d2638;
+  --text: #d5dcea;
+  --dim: #7d89a3;
+  --accent: #ffd36b;
+  --accent2: #5cc8ff;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: var(--bg); color: var(--text);
+  font: 14px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { min-height: 100vh; padding: 16px; }
+header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 16px; margin: 0 auto 12px; max-width: 1200px; }
+h1 { font-size: 20px; margin: 0; font-weight: 600; letter-spacing: .02em; }
+header .sub { color: var(--dim); }
+header .sub b { color: var(--text); font-weight: 600; }
+main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 16px; max-width: 1200px; margin: 0 auto; }
+@media (max-width: 860px) { main { grid-template-columns: 1fr; } }
+
+.stage { position: relative; background: radial-gradient(circle at 50% 50%, #0d1424 0%, #04060b 75%);
+  border: 1px solid var(--border); border-radius: 12px; overflow: hidden; aspect-ratio: 1; width: 100%; }
+canvas { position: absolute; inset: 0; width: 100%; height: 100%; cursor: grab; display: block; touch-action: none; }
+canvas.drag { cursor: grabbing; }
+.hud { position: absolute; left: 12px; right: 12px; bottom: 10px; display: flex; justify-content: space-between;
+  font: 12px ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--dim); pointer-events: none; }
+.clock { position: absolute; left: 12px; top: 10px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace;
+  color: var(--accent); pointer-events: none; }
+
+aside { display: flex; flex-direction: column; gap: 12px; }
+.card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 14px; }
+.card h2 { margin: 0 0 10px; font-size: 11px; text-transform: uppercase; letter-spacing: .12em; color: var(--dim); font-weight: 600; }
+select, input[type=text] { width: 100%; background: #0a0e17; color: var(--text); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font: inherit; }
+select:focus, input:focus, button:focus-visible { outline: 2px solid var(--accent2); outline-offset: 1px; }
+dl { display: grid; grid-template-columns: auto 1fr; gap: 5px 12px; margin: 12px 0 0; }
+dt { color: var(--dim); }
+dd { margin: 0; text-align: right; font-variant-numeric: tabular-nums; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+dd a { color: var(--accent2); text-decoration: none; }
+dd a:hover { text-decoration: underline; }
+.sec { grid-column: 1 / -1; margin-top: 6px; padding-top: 8px; border-top: 1px solid var(--border);
+  color: var(--dim); font-size: 11px; text-transform: uppercase; letter-spacing: .12em; }
+.ctl { display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; margin-bottom: 10px; }
+.ctl label { color: var(--dim); }
+.ctl output { font-variant-numeric: tabular-nums; font-family: ui-monospace, monospace; }
+.ctl input[type=range] { grid-column: 1 / -1; width: 100%; accent-color: var(--accent2); }
+.row { display: flex; gap: 8px; }
+button { flex: 1; background: #1a2335; color: var(--text); border: 1px solid var(--border); border-radius: 8px;
+  padding: 8px 10px; font: inherit; cursor: pointer; }
+button:hover { background: #222d44; }
+.legend { display: flex; gap: 14px; color: var(--dim); font-size: 12px; margin-top: 4px; }
+.alt { margin-top: 14px; }
+.shapes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 10px; margin-top: 8px; color: var(--dim); font-size: 12px; }
+.shapes span { display: flex; align-items: center; gap: 7px; }
+.shapes svg { width: 12px; height: 12px; fill: var(--text); flex: none; }
+.toggle { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; color: var(--dim); cursor: pointer; }
+.toggle input { accent-color: var(--accent2); }
+.legend i { display: inline-block; width: 18px; height: 3px; border-radius: 2px; vertical-align: middle; margin-right: 5px; }
 </style>
-      <script src="https://cdn.jsdelivr.net/gh/impliedchaos/impliedchaos.github.io@data/starlink/starlink.js"></script> 
-      <script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js" integrity="sha512-JxDmggH93+jdpfW+JF5CgtX1VNBAsvZVbswpqCtTMPyRvPkI+BMdm0L7JR9fbjxEoWt93AyPeiK0OrvfQWx++A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-   </head>
-   <body>
-      <div id="drawb"><canvas id="draw"></canvas></div>
-      <div id="satinfo">
-         Sat: <select id="followsel" onchange="follow=this.value"></select> Constellation Size: <span id="count">0</span>
-         <br/>NORAD ID: <span id="norad"></span>
-         <br/>Object ID: <span id="object"></span>
-         <br/>Launch Date: <span id="ldate"></span>
-         <br/>Speed: <span id="spd"></span>km/s
-         <br/>Altitude: <span id="altitude"></span>km
-         <br/>Longitude: <span id="lng"></span>&deg;
-         <br/>Latitude: <span id="lat"></span>&deg;
-         <br/>Apogee: <span id="apogee"></span>km
-         <br/>Perigee: <span id="perigee"></span>km
-         <br/>Eccentricity: <span id="eccentricity"></span>
-         <br/>Inclination: <span id="inclination"></span>&deg;
-         <br/>Semi Major Axis: <span id="axis"></span>km
-         <br/>Period: <span id="period"></span> minutes
+<script src="https://cdn.jsdelivr.net/gh/impliedchaos/impliedchaos.github.io@data/starlink/starlink.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/satellite.js/4.1.3/satellite.min.js" integrity="sha512-JxDmggH93+jdpfW+JF5CgtX1VNBAsvZVbswpqCtTMPyRvPkI+BMdm0L7JR9fbjxEoWt93AyPeiK0OrvfQWx++A==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+</head>
+<body>
+<header>
+  <h1>Starlink Constellation</h1>
+  <span class="sub"><b id="count">0</b> satellites &middot; data for <b id="datadate">&ndash;</b> &middot; propagated with SGP4</span>
+</header>
+
+<main>
+  <div class="stage">
+    <canvas id="draw"></canvas>
+    <div class="clock" id="clock"></div>
+    <div class="hud"><span>drag to rotate &middot; click a satellite to follow it</span><span id="fps"></span></div>
+  </div>
+
+  <aside>
+    <section class="card">
+      <h2>Satellite</h2>
+      <input type="text" id="filter" placeholder="Filter by name or NORAD ID&hellip;" autocomplete="off">
+      <select id="followsel" size="1" style="margin-top:8px" aria-label="Followed satellite"></select>
+      <dl>
+        <dt>NORAD ID</dt><dd id="norad"></dd>
+        <dt>Object ID</dt><dd id="object"></dd>
+        <dt>Launched</dt><dd id="ldate"></dd>
+        <div class="sec">Position</div>
+        <dt>Latitude</dt><dd id="lat"></dd>
+        <dt>Longitude</dt><dd id="lng"></dd>
+        <dt>Altitude</dt><dd id="altitude"></dd>
+        <dt>Speed</dt><dd id="spd"></dd>
+        <div class="sec">Orbit</div>
+        <dt>Apogee</dt><dd id="apogee"></dd>
+        <dt>Perigee</dt><dd id="perigee"></dd>
+        <dt>Semi-major axis</dt><dd id="axis"></dd>
+        <dt>Eccentricity</dt><dd id="eccentricity"></dd>
+        <dt>Inclination</dt><dd id="inclination"></dd>
+        <dt>Period</dt><dd id="period"></dd>
+      </dl>
+    </section>
+
+    <section class="card">
+      <h2>Playback</h2>
+      <div class="ctl">
+        <label for="speed">Time speed</label><output id="speedlabel"></output>
+        <input type="range" id="speed" min="0" max="1000" step="1" value="30">
       </div>
-      <br/>
-      Speed: <input type="range" min="0" max="1000" value="30" list="spdf" step="1" id="speed"> <span id="speedlabel">1</span>
-      <br/>
-      <datalist id="spdf"><option value="0"><option value="1"><option value="30"></option></datalist>
-      Rotation: <input type="range" min="0" max="2" value="2" step="1" id="rotfact"> <span id="rotlabel">2</span>
-      <br/>
-      <script>
-var so=[];
-var sp=[];
-var cur=[];
-var sel=document.getElementById("followsel");
-for (let i=0; i<sats.length; i++) { 
-   so[i]=satellite.twoline2satrec(sats[i].TLE_LINE1,sats[i].TLE_LINE2);
-   let opt = document.createElement('option');
-   opt.value = i;
-   opt.innerHTML = sats[i].OBJECT_NAME;
-   sel.appendChild(opt);
+      <div class="ctl">
+        <label for="rotfact">View rotation</label><output id="rotlabel"></output>
+        <input type="range" id="rotfact" min="0" max="2" step="1" value="2">
+      </div>
+      <label class="toggle"><input type="checkbox" id="glass" checked> Translucent Earth (see the far side)</label>
+      <div class="row">
+        <button id="pause" type="button">Pause</button>
+        <button id="reset" type="button">Restart day</button>
+        <button id="resetview" type="button">Reset view</button>
+      </div>
+      <div class="legend">
+        <span><i style="background:#ff7a5c"></i>past hour</span>
+        <span><i style="background:#5cff9a"></i>next hour</span>
+      </div>
+      <div class="alt">
+        <label style="color:var(--dim)">Inclination (color)</label>
+        <div class="shapes">
+          <span><svg viewBox="-6 -6 12 12" style="fill:hsl(168 75% 55%)"><circle r="5"/></svg>~43&deg;</span>
+          <span><svg viewBox="-6 -6 12 12" style="fill:hsl(220 100% 65%)"><circle r="5"/></svg>~53&deg;</span>
+          <span><svg viewBox="-6 -6 12 12" style="fill:hsl(320 100% 65%)"><circle r="5"/></svg>~70&deg;</span>
+          <span><svg viewBox="-6 -6 12 12" style="fill:hsl(30 100% 65%)"><circle r="5"/></svg>~97&deg; (polar)</span>
+        </div>
+      </div>
+      <div class="alt">
+        <label style="color:var(--dim)">Mean altitude (shape)</label>
+        <div class="shapes" style="grid-template-columns:1fr">
+          <span><svg viewBox="-6 -6 12 12"><path d="M0-5.5L5.5 4.5H-5.5Z"/></svg>below 420 km &mdash; parking / raising / deorbiting</span>
+          <span><svg viewBox="-6 -6 12 12"><circle r="5"/></svg>420&ndash;500 km &mdash; main shells</span>
+          <span><svg viewBox="-6 -6 12 12"><path d="M0-6L5 0 0 6-5 0Z"/></svg>above 500 km</span>
+        </div>
+      </div>
+    </section>
+  </aside>
+</main>
+
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const ER = 6378.136;            // Earth radius, km
+const DAY = 86400000;
+const CAM = 20000;              // camera distance from Earth centre, km
+const TRACK_STEP = 100000;      // ms between orbit-track samples
+const TRACK_SPAN = 3600000;     // +/- 1 hour
+
+// ---- data ---------------------------------------------------------------
+const recs = [];                // {meta, rec}
+for (const s of sats) {
+  try { recs.push({ meta: s, rec: satellite.twoline2satrec(s.TLE_LINE1, s.TLE_LINE2) }); } catch (e) {}
 }
+const N = recs.length;
 
-var c=document.getElementById("draw")
-var ctx=c.getContext("2d")
-c.height=800;
-c.width=800;
-//var start=1629432000000;
-var end=start+86400000;
-var time=start;
-var lasttime=0;
-const rot=Math.PI/43200000;
-var theta=0;//Math.PI/2;
-const ER=6378.136;
-var follow=0;
-var now = new Date();
-var gmst = {};
+// ---- encoding: colour = inclination group, shape = mean-altitude group ----
+const LEVELS = 8;
+// inclination groups: ~43 deg, ~53 deg, ~70 deg, ~97 deg (polar)
+const INC_HSL = [[168, 75], [220, 100], [320, 100], [30, 100]];   // [hue, saturation%]
+const incGroup = recs.map(r => { const v = +r.meta.INCLINATION; return v < 50 ? 0 : v < 60 ? 1 : v < 80 ? 2 : 3; });
+// altitude groups -> marker shape: 0 low (<420 km) triangle, 1 main shells (420-500 km) circle, 2 high (>500 km) diamond
+const SHAPE = ["tri", "circle", "diamond"];
+const altGroup = recs.map(r => { const a = (+r.meta.APOAPSIS + +r.meta.PERIAPSIS) / 2; return a < 420 ? 0 : a < 500 ? 1 : 2; });
+// colour[i][level]: level 0 = far side of orbit (dim) .. LEVELS-1 = near (bright)
+const colour = incGroup.map(g => Array.from({ length: LEVELS }, (_, l) =>
+  `hsl(${INC_HSL[g][0]} ${INC_HSL[g][1]}% ${(36 + 32 * l / (LEVELS - 1)).toFixed(0)}%)`));
+$("count").textContent = N.toLocaleString();
+$("datadate").textContent = new Date(start).toISOString().slice(0, 10);
+document.title = "Starlink Constellation – " + new Date(start).toISOString().slice(0, 10);
 
-function update() {
-   let s = so[follow];
-   let p = satellite.propagate(s,now);
-   let pos = p.position;
-   let pgd = satellite.eciToGeodetic(pos,gmst);
-// let alt1 = Math.sqrt(pos.x*pos.x + pos.y*pos.y + pos.z*pos.z) - ER;
-   let alt = pgd.height;
-   let lat = satellite.degreesLat(pgd.latitude);
-   let lng = satellite.degreesLong(pgd.longitude);
-   let vel = p.velocity;
-   let spd = Math.sqrt(vel.x*vel.x + vel.y*vel.y + vel.z*vel.z);
-   document.getElementById("altitude").innerHTML=alt.toString().substr(0,7);//+" "+alt1.toString().substr(0,7);
-   document.getElementById("spd").innerHTML=spd.toString().substr(0,7);
-   document.getElementById("norad").innerHTML='<a href="https://www.n2yo.com/satellite/?s='+sats[follow].NORAD_CAT_ID+'" target="_blank">'+sats[follow].NORAD_CAT_ID+'</a>';
-   document.getElementById("object").innerHTML=sats[follow].OBJECT_ID;
-   document.getElementById("ldate").innerHTML=sats[follow].LAUNCH_DATE;
-   document.getElementById("apogee").innerHTML=sats[follow].APOAPSIS;
-   document.getElementById("perigee").innerHTML=sats[follow].PERIAPSIS;
-   document.getElementById("eccentricity").innerHTML=sats[follow].ECCENTRICITY;
-   document.getElementById("inclination").innerHTML=sats[follow].INCLINATION;
-   document.getElementById("axis").innerHTML=sats[follow].SEMIMAJOR_AXIS;
-   document.getElementById("period").innerHTML=sats[follow].PERIOD;
-   document.getElementById("lat").innerHTML=lat;
-   document.getElementById("lng").innerHTML=lng;
-   sel.value=follow;
+// ---- state --------------------------------------------------------------
+let follow = 0, time = start, last = 0, paused = false, theta = 0;
+const glassEl = $("glass");
+let userYaw = 0, userPitch = 0;   // set by dragging
+const cur = new Array(N);       // screen positions for hit-testing
+const pts = new Array(N);       // reusable per-frame buffers
+for (let i = 0; i < N; i++) pts[i] = { x: 0, y: 0, z: 0, i, ok: false };
+
+// ---- UI: selector / filter ----------------------------------------------
+const sel = $("followsel"), filter = $("filter");
+function fillSelect() {
+  const q = filter.value.trim().toLowerCase();
+  const frag = document.createDocumentFragment();
+  let shown = 0;
+  for (let i = 0; i < N; i++) {
+    const m = recs[i].meta;
+    if (q && i !== follow && !(m.OBJECT_NAME.toLowerCase().includes(q) || String(m.NORAD_CAT_ID).includes(q))) continue;
+    const o = document.createElement("option");
+    o.value = i; o.textContent = m.OBJECT_NAME + "  (" + m.NORAD_CAT_ID + ")";
+    frag.appendChild(o); shown++;
+  }
+  sel.replaceChildren(frag);
+  sel.value = follow;
+  sel.size = q ? Math.min(Math.max(shown, 2), 8) : 1;
 }
+filter.addEventListener("input", fillSelect);
+sel.addEventListener("change", () => { follow = +sel.value; });
+fillSelect();
 
-c.addEventListener('click',(e)=> {
-   let boundingRect = e.target.getBoundingClientRect();
-   let x = e.clientX - boundingRect.left,
-       y = e.clientY - boundingRect.top;
+// ---- UI: controls --------------------------------------------------------
+const speedEl = $("speed"), rotEl = $("rotfact");
+function labels() {
+  $("speedlabel").textContent = paused ? "paused" : (+speedEl.value === 0 ? "frozen" : speedEl.value + "×");
+  $("rotlabel").textContent = rotEl.value + "×";
+}
+speedEl.addEventListener("input", labels);
+rotEl.addEventListener("input", labels);
+$("pause").addEventListener("click", () => { paused = !paused; $("pause").textContent = paused ? "Resume" : "Pause"; labels(); });
+$("reset").addEventListener("click", () => { time = start; });
+addEventListener("keydown", e => {
+  if (e.code === "Space" && !/^(INPUT|SELECT|BUTTON)$/.test(e.target.tagName)) { e.preventDefault(); $("pause").click(); }
+});
+labels();
 
-   for (let i=0; i<cur.length; i++) {
-      dx=x - cur[i].x;
-      dy=y - cur[i].y;
-      if (dx*dx + dy*dy < cur[i].r*cur[i].r) {
-         follow=i;
-//         console.log("ok "+e.clientX+" "+e.clientY+" "+cur[i].x+" "+cur[i].y+" "+cur[i].r);
-         break;
-      }
-//      if (i==cur.length-1) console.log("nope "+e.clientX+" "+e.clientY);
-   }
+// ---- canvas --------------------------------------------------------------
+const c = $("draw"), ctx = c.getContext("2d");
+let W = 0, F = 1;               // css size, focal scale
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const r = c.getBoundingClientRect();
+  W = r.width;
+  c.width = Math.round(r.width * dpr);
+  c.height = Math.round(r.height * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  // orbits at ~7000 km should fill ~46% of the canvas
+  F = (W * 0.46) * (CAM - 7000) / 7000;
+}
+new ResizeObserver(resize).observe(c);
+resize();
+
+// Camera looks down the -x axis from x=+CAM; screen X from y, screen Y from z.
+function proj(x, y, z, out) {
+  const d = CAM - x;
+  out.x = W / 2 + F * y / d;
+  out.y = W / 2 - F * z / d;
+  out.d = d;
+  return out;
+}
+const tmp = { x: 0, y: 0, d: 0 };
+
+// ---- drag to rotate ------------------------------------------------------
+let drag = null, moved = false;
+c.addEventListener("pointerdown", e => {
+  drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY };
+  moved = false;
+  c.setPointerCapture(e.pointerId);
+});
+c.addEventListener("pointermove", e => {
+  if (!drag) return;
+  if (!moved && Math.hypot(e.clientX - drag.sx, e.clientY - drag.sy) < 4) return;
+  if (!moved) { moved = true; c.classList.add("drag"); }
+  const k = 1 / (F * ER / Math.sqrt(CAM * CAM - ER * ER));   // ~one radian per Earth radius dragged
+  userYaw += (e.clientX - drag.x) * k;
+  userPitch = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, userPitch + (e.clientY - drag.y) * k));
+  drag.x = e.clientX; drag.y = e.clientY;
+});
+const endDrag = () => { drag = null; c.classList.remove("drag"); };
+c.addEventListener("pointerup", endDrag);
+c.addEventListener("pointercancel", endDrag);
+$("resetview").addEventListener("click", () => { userYaw = 0; userPitch = 0; });
+
+c.addEventListener("click", e => {
+  if (moved) { moved = false; return; }     // that was a drag, not a click
+  const b = c.getBoundingClientRect();
+  const x = e.clientX - b.left, y = e.clientY - b.top;
+  let best = -1, bd = Infinity;
+  for (let i = 0; i < N; i++) {
+    const p = cur[i]; if (!p) continue;
+    const dx = x - p.x, dy = y - p.y, d2 = dx * dx + dy * dy, hit = Math.max(p.r, 6);
+    // prefer the nearest to the cursor, nearer-to-camera wins ties
+    if (d2 < hit * hit && d2 < bd) { bd = d2; best = i; }
+  }
+  if (best >= 0) { follow = best; sel.value = best; }
 });
 
-
-function draw(ts) {
-   let fps=ts-lasttime;
-   lasttime=ts;
-   now = new Date(time);
-   gmst = satellite.gstime(now);
-   let speed = document.getElementById("speed").value;
-   document.getElementById("speedlabel").innerHTML=speed;
-   let rotfact = document.getElementById("rotfact").value;
-   document.getElementById("rotlabel").innerHTML=rotfact;
-   let tmp=[];
-   for (let i=0; i<sats.length; i++) {
-      let pos=satellite.propagate(so[i],now);
-      tmp[i]=satellite.eciToEcf(pos.position,gmst);
-      let x=Math.cos(theta)*tmp[i].x-Math.sin(theta)*tmp[i].y;
-      let y=Math.cos(theta)*tmp[i].y+Math.sin(theta)*tmp[i].x;
-      tmp[i].x=x;
-      tmp[i].y=y;
-      tmp[i].i=i;
-   }
-   sp=tmp.sort((a,b)=>{return(a.x>b.x?1:a.x<b.x?-1:0)});
-   ctx.fillStyle="#000";
-   ctx.fillRect(0,0,800,800);
-   let fo=so[follow];
-   ctx.beginPath();
-   for (let i=0; i<7200000; i+=100000) {
-      let n=new Date(time+i-3600000);
-      let p=satellite.eciToEcf(satellite.propagate(fo,n).position,gmst);
-      if (i<3600000) {ctx.strokeStyle="#ff4f4f"} else {ctx.strokeStyle="#4fff4f"}
-      let x1=Math.cos(theta)*p.x-Math.sin(theta)*p.y;
-      let y1=Math.cos(theta)*p.y+Math.sin(theta)*p.x;
-      let z=-1*(x1/8-7500);
-      let x=(1+y1/z)*400;
-      let y=(1-p.z/z)*400;
-      if(i && x1 <= 0) {
-         ctx.lineTo(x,y);
-      } else {
-         ctx.stroke(); ctx.beginPath();
-         ctx.moveTo(x,y);
-      }
-   }
-   ctx.stroke();
-   for (let i=0; i<sp.length; i++) {
-      if (sp[i].x > 0) continue;
-      let z=-1*(sp[i].x/8-7500);
-      let r=(sp[i].i==follow)?5:(sp[i].x/8+875)/1750+3;
-      let x=(1+sp[i].y/z)*400;
-      let y=(1-sp[i].z/z)*400;
-      let c=(sp[i].x-7000)/14000*192+255;
-      ctx.fillStyle="rgb("+c+","+c+","+c+")";
-      if (sp[i].i==follow) ctx.fillStyle="#ffff7f";
-      ctx.strokeStyle="#000";
-      cur[sp[i].i]={"x":x,"y":y,"r":r};
-      ctx.beginPath();
-      ctx.arc(x,y,r,0,Math.PI*2);
-      ctx.fill();
-      ctx.stroke();
-   }
-   ctx.fillStyle="rgba(0,0,255,0.25)"
-   ctx.beginPath();
-   ctx.arc(400,400,ER/7500*400,0,Math.PI*2);
-   ctx.fill();
-   ctx.beginPath();
-   for (let i=0; i<180; i++) {
-      let r=Math.PI+i*Math.PI/180;
-      let x=Math.sin(r)*ER;
-      let y=Math.cos(r)*ER;
-      let x1=Math.cos(Math.PI/2+theta)*x;
-      let z1=Math.sin(Math.PI/2+theta)*x;
-      if(i==90){if(z1>0){ctx.strokeStyle="#7f7f7f";} else {ctx.strokeStyle="#ffff00";}}
-      let z=-1*(z1/8-7500);
-      x=(1+x1/z)*400;
-      y=(1-y/z)*400;
-      if (!i) {
-         ctx.moveTo(x,y);
-      } else {
-         ctx.lineTo(x,y);
-      }
-   }
-   ctx.stroke();
-   ctx.beginPath();
-   for (let i=0; i<7200000; i+=100000) {
-      let n=new Date(time+i-3600000);
-      let p=satellite.eciToEcf(satellite.propagate(fo,n).position,gmst);
-      if (i<3600000) {ctx.strokeStyle="#ff4f4f"} else {ctx.strokeStyle="#4fff4f"}
-      let x1=Math.cos(theta)*p.x-Math.sin(theta)*p.y;
-      let y1=Math.cos(theta)*p.y+Math.sin(theta)*p.x;
-      let z=-1*(x1/8-7500);
-      let x=(1+y1/z)*400;
-      let y=(1-p.z/z)*400;
-      if(i && x1 > 0) {
-         ctx.lineTo(x,y);
-      } else {
-         ctx.stroke(); ctx.beginPath();
-         ctx.moveTo(x,y);
-      }
-   }
-   ctx.stroke();
-   for (let i=0; i<sp.length; i++) {
-      if (sp[i].x <= 0) continue;
-      let z=-1*(sp[i].x/8-7500);
-      let r=(sp[i].i==follow)?5:(sp[i].x/8+875)/1750+3;
-      let x=(1+sp[i].y/z)*400;
-      let y=(1-sp[i].z/z)*400;
-      let c=(sp[i].x-7000)/14000*192+255;
-      ctx.fillStyle="rgb("+c+","+c+","+c+")";
-      if (sp[i].i==follow) ctx.fillStyle="#ffff7f";
-      ctx.strokeStyle="#000";
-      cur[sp[i].i]={"x":x,"y":y,"r":r};
-      ctx.beginPath();
-      ctx.arc(x,y,r,0,Math.PI*2);
-      ctx.fill();
-      ctx.stroke();
-   }
-   update();
-   time+=speed*fps;
-   theta=rot*rotfact*(time-start);
-   if (time > end) {
-      time=start;
-   }
-   ctx.font="12px sans-serif";
-   ctx.fillStyle="#ffff7f";
-   ctx.fillText(now.toUTCString(),1,13);
-   ctx.fillText("FPS: "+(1000/fps).toString().substr(0,7),1,798);
-   window.requestAnimationFrame(draw);
+// ---- geometry helpers ----------------------------------------------------
+function rotate(p, th) {        // spin ECEF about z (auto-spin + drag yaw), then tilt by drag pitch
+  const cs = Math.cos(th + userYaw), sn = Math.sin(th + userYaw);
+  const x = cs * p.x - sn * p.y, y = cs * p.y + sn * p.x;
+  const cp = Math.cos(userPitch), sp = Math.sin(userPitch);
+  return { x: x * cp + p.z * sp, y, z: p.z * cp - x * sp };
 }
-document.getElementById("count").innerHTML=sats.length.toString();
-window.requestAnimationFrame(draw);
-      </script>
-   </body>
+
+function drawTrack(rec, th, front) {
+  // Draw the +/-1h ground-fixed orbit of the followed satellite; only the
+  // segments on the requested side (front = nearer than the Earth's centre).
+  let prev = null;
+  for (let t = -TRACK_SPAN; t <= TRACK_SPAN; t += TRACK_STEP) {
+    const d = new Date(time + t);
+    const pv = satellite.propagate(rec, d);
+    if (!pv.position) { prev = null; continue; }
+    const e = rotate(satellite.eciToEcf(pv.position, satellite.gstime(d)), th);
+    const isFront = e.x > 0;
+    const p = proj(e.x, e.y, e.z, { x: 0, y: 0, d: 0 });
+    if (prev && isFront === front && prev.front === front) {
+      ctx.strokeStyle = t <= 0 ? "#ff7a5c" : "#5cff9a";
+      ctx.globalAlpha = front ? 1 : 0.45;
+      ctx.beginPath(); ctx.moveTo(prev.x, prev.y); ctx.lineTo(p.x, p.y); ctx.stroke();
+    }
+    prev = { x: p.x, y: p.y, front: isFront };
+  }
+  ctx.globalAlpha = 1;
+}
+
+function marker(x, y, r, shape) {
+  ctx.beginPath();
+  if (shape === "circle") ctx.arc(x, y, r, 0, 6.2832);
+  else if (shape === "tri") { const a = r * 1.3; ctx.moveTo(x, y - a); ctx.lineTo(x + a, y + a * 0.75); ctx.lineTo(x - a, y + a * 0.75); ctx.closePath(); }
+  else { const a = r * 1.35; ctx.moveTo(x, y - a); ctx.lineTo(x + a, y); ctx.lineTo(x, y + a); ctx.lineTo(x - a, y); ctx.closePath(); }
+  ctx.fill();
+}
+
+function drawSats(list, front) {
+  for (const p of list) {
+    if ((p.x > 0) !== front) continue;
+    const s = proj(p.x, p.y, p.z, tmp);
+    const sel_ = p.i === follow;
+    const depth = (p.x + 7000) / 14000;              // 0 far .. 1 near
+    const r = sel_ ? 4.5 : 1.6 + depth * 1.6;
+    // far-side sats hidden behind the Earth aren't clickable
+    const hidden = !glassEl.checked && !front && Math.hypot(p.y, p.z) < ER;
+    cur[p.i] = hidden ? null : { x: s.x, y: s.y, r };
+    ctx.fillStyle = sel_ ? "#ffd36b" : colour[p.i][Math.min(LEVELS - 1, (depth * LEVELS) | 0)];
+    ctx.globalAlpha = sel_ ? 1 : (front ? 0.95 : 0.55);
+    marker(s.x, s.y, r, SHAPE[altGroup[p.i]]);
+    if (sel_) {
+      ctx.globalAlpha = 1; ctx.strokeStyle = "rgba(255,211,107,.6)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.arc(s.x, s.y, r + 5, 0, 6.2832); ctx.stroke();
+    }
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawEarth(th) {
+  const limb = F * ER / Math.sqrt(CAM * CAM - ER * ER);
+  const g = ctx.createRadialGradient(W / 2 - limb * 0.35, W / 2 - limb * 0.35, limb * 0.1, W / 2, W / 2, limb);
+  g.addColorStop(0, "#1d4f8f"); g.addColorStop(0.7, "#0e2c57"); g.addColorStop(1, "#071526");
+  ctx.fillStyle = g;
+  ctx.globalAlpha = glassEl.checked ? 0.3 : 1;
+  ctx.beginPath(); ctx.arc(W / 2, W / 2, limb, 0, 6.2832); ctx.fill();
+  ctx.globalAlpha = 1;
+  ctx.strokeStyle = "rgba(120,180,255,.35)"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.arc(W / 2, W / 2, limb, 0, 6.2832); ctx.stroke();
+
+  // equator and prime meridian, so you can tell the Earth is turning
+  const ring = (fn, col) => {
+    ctx.lineWidth = 1;
+    for (const front of [false, true]) {
+      ctx.strokeStyle = col; ctx.globalAlpha = front ? 0.8 : 0.2;
+      ctx.beginPath(); let pen = false;
+      for (let a = 0; a <= 360; a += 4) {
+        const v = fn(a * Math.PI / 180);
+        const q = rotate(v, th);
+        if ((q.x > 0) !== front) { pen = false; continue; }
+        const s = proj(q.x, q.y, q.z, tmp);
+        pen ? ctx.lineTo(s.x, s.y) : ctx.moveTo(s.x, s.y); pen = true;
+      }
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  };
+  ring(a => ({ x: ER * Math.cos(a), y: ER * Math.sin(a), z: 0 }), "#ffe27a");
+  ring(a => ({ x: ER * Math.cos(a), y: 0, z: ER * Math.sin(a) }), "#7ac8ff");
+}
+
+// ---- panel ---------------------------------------------------------------
+const f = (v, d) => Number(v).toFixed(d);
+let lastPanel = 0;
+function updatePanel(now, gmst, ts) {
+  if (ts - lastPanel < 100) return; lastPanel = ts;
+  const m = recs[follow].meta;
+  const pv = satellite.propagate(recs[follow].rec, now);
+  if (!pv.position) return;
+  const g = satellite.eciToGeodetic(pv.position, gmst);
+  const v = pv.velocity, spd = Math.hypot(v.x, v.y, v.z);
+  const lat = satellite.degreesLat(g.latitude), lng = satellite.degreesLong(g.longitude);
+  $("norad").innerHTML = '<a href="https://www.n2yo.com/satellite/?s=' + m.NORAD_CAT_ID + '" target="_blank" rel="noopener">' + m.NORAD_CAT_ID + "</a>";
+  $("object").textContent = m.OBJECT_ID;
+  $("ldate").textContent = m.LAUNCH_DATE;
+  $("lat").textContent = f(Math.abs(lat), 3) + "° " + (lat >= 0 ? "N" : "S");
+  $("lng").textContent = f(Math.abs(lng), 3) + "° " + (lng >= 0 ? "E" : "W");
+  $("altitude").textContent = f(g.height, 1) + " km";
+  $("spd").textContent = f(spd, 3) + " km/s";
+  $("apogee").textContent = f(m.APOAPSIS, 1) + " km";
+  $("perigee").textContent = f(m.PERIAPSIS, 1) + " km";
+  $("axis").textContent = f(m.SEMIMAJOR_AXIS, 1) + " km";
+  $("eccentricity").textContent = f(m.ECCENTRICITY, 6);
+  $("inclination").textContent = f(m.INCLINATION, 2) + "°";
+  $("period").textContent = f(m.PERIOD, 2) + " min";
+  $("clock").textContent = now.toUTCString().replace("GMT", "UTC");
+}
+
+// ---- main loop -----------------------------------------------------------
+const ROT = 2 * Math.PI / DAY;
+function frame(ts) {
+  const dt = Math.min(ts - last, 100); last = ts;
+  if (!paused) time += (+speedEl.value) * dt;
+  if (time > start + DAY) time = start;
+
+  const now = new Date(time), gmst = satellite.gstime(now);
+  theta = ROT * (+rotEl.value) * (time - start);
+
+  const live = [];
+  for (let i = 0; i < N; i++) {
+    const pv = satellite.propagate(recs[i].rec, now);
+    if (!pv.position) { cur[i] = null; continue; }
+    const e = rotate(satellite.eciToEcf(pv.position, gmst), theta);
+    const p = pts[i]; p.x = e.x; p.y = e.y; p.z = e.z; live.push(p);
+  }
+  live.sort((a, b) => a.x - b.x);
+
+  ctx.clearRect(0, 0, W, W);
+  ctx.lineWidth = 1.5;
+  drawTrack(recs[follow].rec, theta, false);
+  drawSats(live, false);
+  drawEarth(theta);
+  ctx.lineWidth = 1.5;
+  drawTrack(recs[follow].rec, theta, true);
+  drawSats(live, true);
+
+  updatePanel(now, gmst, ts);
+  if (dt > 0) $("fps").textContent = Math.round(1000 / dt) + " fps";
+  requestAnimationFrame(frame);
+}
+requestAnimationFrame(frame);
+})();
+</script>
+</body>
 </html>
